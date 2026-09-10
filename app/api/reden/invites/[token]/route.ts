@@ -1,8 +1,12 @@
+// app/api/reden/invites/[token]/route.ts
+
 import { NextResponse } from "next/server";
 import crypto from "crypto";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
-import { createClient as createSupabaseClient } from "@supabase/supabase-js";
+import {
+  createClient as createSupabaseClient,
+} from "@supabase/supabase-js";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -26,7 +30,9 @@ function getSessionEmail(session: any) {
 }
 
 function getAdminSupabase() {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const url =
+    process.env.NEXT_PUBLIC_SUPABASE_URL;
+
   const serviceRoleKey =
     process.env.SUPABASE_SERVICE_ROLE_KEY;
 
@@ -112,10 +118,15 @@ export async function POST(req: Request) {
     // We use the service-role client because this is a
     // trusted server-side operation.
     //
-    // Ownership is STILL enforced explicitly below by:
+    // Ownership is STILL enforced explicitly below.
     //
-    // .eq("user_email", email)
+    // IMPORTANT:
     //
+    // user_email      = storefront/client owner
+    // developer_email = PRETHIM developer
+    //
+    // Therefore the authenticated developer must be
+    // checked against developer_email.
     // ---------------------------------------------------------
 
     let supabase;
@@ -152,13 +163,14 @@ export async function POST(req: Request) {
         `
           id,
           user_email,
+          developer_email,
           site_id,
           store_name,
           status
         `
       )
       .eq("id", connectionId)
-      .eq("user_email", email)
+      .eq("developer_email", email)
       .maybeSingle();
 
     if (connectionError) {
@@ -222,9 +234,7 @@ export async function POST(req: Request) {
     // ---------------------------------------------------------
 
     const token =
-      crypto
-        .randomBytes(32)
-        .toString("hex");
+      crypto.randomBytes(32).toString("hex");
 
     const tokenHash =
       hashToken(token);
@@ -304,10 +314,13 @@ export async function POST(req: Request) {
       .insert({
         connection_id:
           connection.id,
+
         token_hash:
           tokenHash,
+
         created_by:
           email,
+
         expires_at:
           expiresAt,
       })
@@ -349,16 +362,13 @@ export async function POST(req: Request) {
     // ---------------------------------------------------------
     // 9. BUILD PUBLIC INVITE URL
     //
-    // IMPORTANT:
-    //
-    // Your page is using:
+    // The public invite page uses:
     //
     // /invites/[token]
     //
-    // Therefore the generated URL must also be:
+    // Therefore the generated URL must also use:
     //
-    // /invites/[token]
-    //
+    // /invites/<token>
     // ---------------------------------------------------------
 
     const origin =
@@ -375,9 +385,11 @@ export async function POST(req: Request) {
       ok: true,
 
       invite: {
-        id: invite.id,
+        id:
+          invite.id,
 
-        url: inviteUrl,
+        url:
+          inviteUrl,
 
         expiresAt:
           invite.expires_at,
