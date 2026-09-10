@@ -162,7 +162,7 @@ export default function PrivacyPage() {
                 <p className="mt-2">
                   REDEN may receive events and behavioral signals from an
                   integrated application or storefront. Depending on the
-                  customer's implementation, these signals may include
+                  customer&apos;s implementation, these signals may include
                   interactions such as page activity, product interactions,
                   cart activity, purchase events, and other events configured
                   by the customer.
