@@ -58,7 +58,12 @@ export const runtime = "nodejs";
  * 11. Only the verified client connection is activated.
  * 12. Other active storefronts belonging to the same client
  *     are disabled.
- * 13. API keys are never returned by this route.
+ * 13. API keys are never returned by this route, and are
+ *     never required as input either -- REDEN's own
+ *     /api/v1/verify endpoint only reads siteId and
+ *     clientEmail from the query string. It has no apiKey
+ *     parameter at all, so requiring one here only blocks
+ *     every legitimate caller for no verification benefit.
  * 14. Developer identity is never used as storefront owner.
  *
  * =========================================================
@@ -71,7 +76,6 @@ const REDEN_VERIFY_TIMEOUT_MS = 10_000;
 
 const MAX_SITE_ID_LENGTH = 200;
 const MAX_NAME_LENGTH = 100;
-const MAX_API_KEY_LENGTH = 500;
 const MAX_EMAIL_LENGTH = 320;
 
 /* =========================================================
@@ -80,7 +84,6 @@ const MAX_EMAIL_LENGTH = 320;
 
 type VerifyBody = {
   siteId?: unknown;
-  apiKey?: unknown;
   name?: unknown;
   clientEmail?: unknown;
 };
@@ -149,21 +152,6 @@ function isValidSiteId(siteId: string): boolean {
   }
 
   return /^site_[a-zA-Z0-9._-]+$/.test(siteId);
-}
-
-function isValidApiKey(apiKey: string): boolean {
-  if (!apiKey) {
-    return false;
-  }
-
-  if (apiKey.length > MAX_API_KEY_LENGTH) {
-    return false;
-  }
-
-  /*
-   * REDEN owns the API-key format.
-   */
-  return true;
 }
 
 function getAdminSupabase() {
@@ -238,7 +226,6 @@ function errorResponse(
 async function callRedenVerify(input: {
   siteId: string;
   clientEmail: string;
-  apiKey: string;
   name: string;
 }) {
   const params =
@@ -258,13 +245,6 @@ async function callRedenVerify(input: {
     "owner_email",
     input.clientEmail
   );
-
-  if (input.apiKey) {
-    params.set(
-      "apiKey",
-      input.apiKey
-    );
-  }
 
   if (input.name) {
     params.set(
@@ -407,7 +387,6 @@ function isSdkConnected(
 async function verifyInstallation(
   input: {
     siteId: string;
-    apiKey: string;
     name: string;
     clientEmail?: string;
   }
@@ -626,34 +605,7 @@ async function verifyInstallation(
     databaseClientEmail;
 
   /* =======================================================
-     5. VALIDATE API KEY
-  ======================================================= */
-
-  const apiKey =
-    cleanString(
-      input.apiKey
-    );
-
-  if (!apiKey) {
-    return errorResponse(
-      "api_key_required",
-      400
-    );
-  }
-
-  if (
-    !isValidApiKey(
-      apiKey
-    )
-  ) {
-    return errorResponse(
-      "invalid_api_key",
-      400
-    );
-  }
-
-  /* =======================================================
-     6. VALIDATE STORE NAME
+     5. VALIDATE STORE NAME
   ======================================================= */
 
   const name =
@@ -673,7 +625,7 @@ async function verifyInstallation(
   }
 
   /* =======================================================
-     7. FIND EXACT CLIENT + SITE CONNECTION
+     6. FIND EXACT CLIENT + SITE CONNECTION
   ======================================================= */
 
   /*
@@ -752,7 +704,7 @@ async function verifyInstallation(
   }
 
   /* =======================================================
-     8. DATABASE OWNERSHIP GUARDS
+     7. DATABASE OWNERSHIP GUARDS
   ======================================================= */
 
   if (
@@ -806,14 +758,13 @@ async function verifyInstallation(
   }
 
   /* =======================================================
-     9. CALL REDEN
+     8. CALL REDEN
   ======================================================= */
 
   const redenResult =
     await callRedenVerify({
       siteId,
       clientEmail,
-      apiKey,
       name,
     });
 
@@ -832,7 +783,7 @@ async function verifyInstallation(
   } = redenResult;
 
   /* =======================================================
-     10. REDEN HTTP FAILURE
+     9. REDEN HTTP FAILURE
   ======================================================= */
 
   if (
@@ -891,7 +842,7 @@ async function verifyInstallation(
   }
 
   /* =======================================================
-     11. REDEN SITE ID MUST MATCH
+     10. REDEN SITE ID MUST MATCH
   ======================================================= */
 
   const returnedSiteId =
@@ -941,7 +892,7 @@ async function verifyInstallation(
   }
 
   /* =======================================================
-     12. DETERMINE SDK STATE
+     11. DETERMINE SDK STATE
   ======================================================= */
 
   const connected =
@@ -950,7 +901,7 @@ async function verifyInstallation(
     );
 
   /* =======================================================
-     13. REDEN SAYS INACTIVE
+     12. REDEN SAYS INACTIVE
   ======================================================= */
 
   if (
@@ -981,7 +932,7 @@ async function verifyInstallation(
   }
 
   /* =======================================================
-     14. SDK NOT CONNECTED
+     13. SDK NOT CONNECTED
   ======================================================= */
 
   if (!connected) {
@@ -1017,7 +968,7 @@ async function verifyInstallation(
   }
 
   /* =======================================================
-     15. VERIFIED
+     14. VERIFIED
   ======================================================= */
 
   /*
@@ -1030,7 +981,7 @@ async function verifyInstallation(
     new Date().toISOString();
 
   /* =======================================================
-     16. RETIRE OTHER CLIENT STOREFRONTS
+     15. RETIRE OTHER CLIENT STOREFRONTS
   ======================================================= */
 
   /*
@@ -1103,7 +1054,7 @@ async function verifyInstallation(
   }
 
   /* =======================================================
-     17. ACTIVATE EXACT CLIENT CONNECTION
+     16. ACTIVATE EXACT CLIENT CONNECTION
   ======================================================= */
 
   const {
@@ -1186,7 +1137,7 @@ async function verifyInstallation(
   }
 
   /* =======================================================
-     18. FINAL STATE GUARD
+     17. FINAL STATE GUARD
   ======================================================= */
 
   if (
@@ -1221,7 +1172,7 @@ async function verifyInstallation(
   }
 
   /* =======================================================
-     19. SUCCESS
+     18. SUCCESS
   ======================================================= */
 
   /*
@@ -1304,11 +1255,6 @@ export async function POST(
           body.siteId
         ),
 
-      apiKey:
-        cleanString(
-          body.apiKey
-        ),
-
       name:
         cleanString(
           body.name
@@ -1364,11 +1310,6 @@ export async function GET(
       siteId:
         searchParams.get(
           "siteId"
-        )?.trim() || "",
-
-      apiKey:
-        searchParams.get(
-          "apiKey"
         )?.trim() || "",
 
       name:
