@@ -75,6 +75,17 @@ type FindStoreResponse = {
   error?: string;
 };
 
+type CredentialsResponse = {
+  ok?: boolean;
+  siteId?: string;
+  apiKey?: string;
+  name?: string;
+  plan?: string;
+  subscriptionStatus?: string;
+  status?: string;
+  error?: string;
+};
+
 const EASE = [0.19, 1, 0.22, 1] as const;
 
 function Glass({
@@ -342,7 +353,15 @@ function TrackingEvent({
 export default function RedenDeveloperPage() {
   const searchParams = useSearchParams();
 
-  const requestedStore = searchParams.get("store");
+  /*
+   * The addstore list links here as
+   * /reden-developer?siteId=<siteId>, since siteId is the
+   * authoritative REDEN tenant identifier (see addstore page
+   * comment). "store" is kept as a legacy fallback in case
+   * anything still links by connection id.
+   */
+  const requestedSiteId = searchParams.get("siteId");
+  const requestedConnectionId = searchParams.get("store");
   const isNew = searchParams.get("new") === "1";
 
   const [stores, setStores] = useState<StoreConnection[]>([]);
@@ -352,6 +371,9 @@ export default function RedenDeveloperPage() {
 
   const [installation, setInstallation] =
     useState<Installation | null>(null);
+
+  const [loadingCredentials, setLoadingCredentials] =
+    useState(false);
 
   const [storeName, setStoreName] = useState("");
   const [clientEmail, setClientEmail] = useState("");
@@ -370,6 +392,75 @@ export default function RedenDeveloperPage() {
 
   const [openEvent, setOpenEvent] =
     useState<string | null>(null);
+
+  /*
+   * Fetches the SDK credential for an already-connected store
+   * via /api/reden/credentials, which re-derives it from REDEN
+   * (idempotent onboard lookup) since PRETHIM never persists
+   * api_key itself. Populates `installation` so the same
+   * credentials/SDK/tracking UI used right after creation also
+   * renders when RE-OPENING an existing store.
+   */
+  const loadCredentials = useCallback(
+    async (store: StoreConnection) => {
+      setLoadingCredentials(true);
+      setError("");
+
+      try {
+        const response = await fetch(
+          `/api/reden/credentials?siteId=${encodeURIComponent(
+            store.siteId
+          )}`,
+          {
+            method: "GET",
+            cache: "no-store",
+            headers: {
+              Accept: "application/json",
+            },
+          }
+        );
+
+        const data: CredentialsResponse =
+          await response.json().catch(() => ({}));
+
+        if (!response.ok || !data?.ok) {
+          throw new Error(
+            data?.error ||
+              "Unable to load this storefront's credentials."
+          );
+        }
+
+        if (!data.siteId || !data.apiKey) {
+          throw new Error(
+            "REDEN did not return valid credentials for this storefront."
+          );
+        }
+
+        setInstallation({
+          siteId: data.siteId,
+          apiKey: data.apiKey,
+          name: data.name || store.name,
+          connectionId: store.id,
+          platform: store.platform,
+        });
+
+        setConnected(
+          data.status === "active" ||
+            store.status === "active"
+        );
+      } catch (err) {
+        setInstallation(null);
+        setError(
+          err instanceof Error
+            ? err.message
+            : "Unable to load this storefront's credentials."
+        );
+      } finally {
+        setLoadingCredentials(false);
+      }
+    },
+    []
+  );
 
   const loadStores = useCallback(async () => {
     try {
@@ -401,15 +492,21 @@ export default function RedenDeveloperPage() {
 
       setStores(loadedStores);
 
-      if (requestedStore) {
-        const match = loadedStores.find(
-          (store: StoreConnection) =>
-            store.id === requestedStore
-        );
+      const match = requestedSiteId
+        ? loadedStores.find(
+            (store: StoreConnection) =>
+              store.siteId === requestedSiteId
+          )
+        : requestedConnectionId
+          ? loadedStores.find(
+              (store: StoreConnection) =>
+                store.id === requestedConnectionId
+            )
+          : undefined;
 
-        if (match) {
-          setSelectedStore(match);
-        }
+      if (match) {
+        setSelectedStore(match);
+        void loadCredentials(match);
       }
     } catch (err) {
       setError(
@@ -420,7 +517,11 @@ export default function RedenDeveloperPage() {
     } finally {
       setLoadingStores(false);
     }
-  }, [requestedStore]);
+  }, [
+    requestedSiteId,
+    requestedConnectionId,
+    loadCredentials,
+  ]);
 
   useEffect(() => {
     void loadStores();
@@ -434,6 +535,8 @@ export default function RedenDeveloperPage() {
     setError("");
     setShowKey(false);
     setOpenEvent(null);
+
+    void loadCredentials(store);
   };
 
   const createStore = async () => {
@@ -520,7 +623,9 @@ export default function RedenDeveloperPage() {
 
         /*
          * Route into the existing storefront instead of
-         * minting a new one via /api/reden/onboard.
+         * minting a new one via /api/reden/onboard. This now
+         * also fetches its credentials, same as any other
+         * re-opened store.
          */
         openStore(existingStore);
         return;
@@ -641,6 +746,12 @@ export default function RedenDeveloperPage() {
 
       setSelectedStore(createdStore);
 
+      /*
+       * The apiKey is already in hand from the onboard
+       * response here, so this sets installation directly
+       * rather than round-tripping through
+       * /api/reden/credentials.
+       */
       setInstallation({
         siteId,
         apiKey,
@@ -1073,7 +1184,12 @@ After implementation, show me:
   }
 
   /*
-   * EXISTING SELECTED STORE STATE
+   * EXISTING SELECTED STORE, CREDENTIALS LOADING OR FAILED
+   *
+   * This branch is only reached once loadCredentials() has
+   * finished and failed (or hasn't been triggered), since a
+   * successful fetch immediately populates `installation` and
+   * falls through to the ACTIVE INTEGRATION branch below.
    */
 
   if (selectedStore && !installation) {
@@ -1104,29 +1220,47 @@ After implementation, show me:
                 {selectedStore.name}
               </h1>
 
-              <p className="mt-5 text-[10px] leading-5 text-[#625c56]">
-                This storefront is already connected
-                to your developer environment. Start a
-                new REDEN integration to retrieve its
-                SDK credentials and installation workflow.
-              </p>
+              {loadingCredentials ? (
+                <div className="mt-5 flex items-center gap-3 text-[10px] text-[#625d58]">
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  Loading credentials
+                </div>
+              ) : (
+                <>
+                  <p className="mt-5 text-[10px] leading-5 text-[#625c56]">
+                    This storefront is already connected to
+                    your developer environment.
+                  </p>
 
-              <div className="mt-7 flex gap-3">
-                <Link
-                  href="/reden-addstore"
-                  className="inline-flex h-9 items-center rounded-lg border border-white/[0.08] px-4 text-[8px] tracking-[0.1em] text-[#817a74]"
-                >
-                  BACK
-                </Link>
+                  {error && (
+                    <div className="mt-4 rounded-xl border border-[#ff7048]/15 bg-[#ff7048]/[0.025] px-4 py-3">
+                      <p className="text-[10px] text-[#ff7048]">
+                        {error}
+                      </p>
+                    </div>
+                  )}
 
-                <Link
-                  href="/reden-developer?new=1"
-                  className="inline-flex h-9 items-center gap-2 rounded-lg bg-[#ff5a1f] px-4 text-[8px] font-semibold tracking-[0.08em] text-[#140b07]"
-                >
-                  START INTEGRATION
-                  <ArrowRight className="h-3 w-3" />
-                </Link>
-              </div>
+                  <div className="mt-7 flex flex-wrap gap-3">
+                    <Link
+                      href="/reden-addstore"
+                      className="inline-flex h-9 items-center rounded-lg border border-white/[0.08] px-4 text-[8px] tracking-[0.1em] text-[#817a74]"
+                    >
+                      BACK
+                    </Link>
+
+                    <button
+                      type="button"
+                      onClick={() =>
+                        void loadCredentials(selectedStore)
+                      }
+                      className="inline-flex h-9 items-center gap-2 rounded-lg bg-[#ff5a1f] px-4 text-[8px] font-semibold tracking-[0.08em] text-[#140b07]"
+                    >
+                      RETRY
+                      <RefreshCw className="h-3 w-3" />
+                    </button>
+                  </div>
+                </>
+              )}
             </Glass>
           </div>
         </div>
@@ -1136,6 +1270,11 @@ After implementation, show me:
 
   /*
    * ACTIVE INTEGRATION
+   *
+   * Reached both right after creating a new store (installation
+   * set directly from the onboard response) AND when re-opening
+   * an existing store (installation populated asynchronously by
+   * loadCredentials via /api/reden/credentials).
    */
 
   if (selectedStore && installation) {
