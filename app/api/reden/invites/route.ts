@@ -1,3 +1,4 @@
+
 import { NextResponse } from "next/server";
 import crypto from "crypto";
 import { getServerSession } from "next-auth";
@@ -85,8 +86,19 @@ export async function POST(req: Request) {
     const supabase = createClient();
 
     /*
-     * Verify that the authenticated user owns
+     * Verify that the authenticated developer owns
      * the requested REDEN connection.
+     *
+     * IMPORTANT:
+     *
+     * reden_connections.user_email
+     * = storefront/client owner
+     *
+     * reden_connections.developer_email
+     * = PRETHIM developer who manages the connection
+     *
+     * The authenticated PRETHIM developer must therefore
+     * be checked against developer_email.
      */
     const {
       data: connection,
@@ -94,10 +106,10 @@ export async function POST(req: Request) {
     } = await supabase
       .from("reden_connections")
       .select(
-        "id, site_id, store_name, user_email, status"
+        "id, site_id, store_name, user_email, developer_email, status"
       )
       .eq("id", connectionId)
-      .eq("user_email", email)
+      .eq("developer_email", email)
       .maybeSingle();
 
     if (connectionError) {
@@ -215,10 +227,21 @@ export async function POST(req: Request) {
       );
     }
 
+    /*
+     * Public invite page.
+     *
+     * The application uses:
+     *
+     * /invites/[token]
+     *
+     * Therefore the generated URL must use:
+     *
+     * /invites/<token>
+     */
     const origin = new URL(req.url).origin;
 
     const inviteUrl =
-      `${origin}/invite/${token}`;
+      `${origin}/invites/${token}`;
 
     return NextResponse.json({
       ok: true,
