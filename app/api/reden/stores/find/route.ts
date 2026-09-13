@@ -1,164 +1,269 @@
 import { NextResponse } from "next/server";
+import crypto from "crypto";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
-import { getAdminSupabase } from "@/lib/reden/connection";
+import { createClient } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
-export const runtime = "nodejs";
 
-function normalize(value: string) {
-  return value
-    .trim()
-    .toLowerCase()
-    .replace(/\s+/g, " ");
+type RequestBody = {
+  connectionId?: unknown;
+  expiresInDays?: unknown;
+};
+
+function hashToken(token: string) {
+  return crypto
+    .createHash("sha256")
+    .update(token)
+    .digest("hex");
 }
 
 export async function POST(req: Request) {
   try {
     const session = await getServerSession(authOptions);
 
-    const developerEmail = session?.user?.email
-      ?.trim()
-      .toLowerCase();
-
-    if (!developerEmail) {
+    if (!session?.user) {
       return NextResponse.json(
         {
           ok: false,
-          found: false,
-          error: "You must be signed in to find an existing storefront.",
+          error: "Authentication required.",
         },
         { status: 401 }
       );
     }
 
-    const body = await req.json().catch(() => null);
+    const email = session.user.email
+      ?.trim()
+      .toLowerCase();
 
-    const storeName =
-      typeof body?.storeName === "string"
-        ? body.storeName.trim()
-        : "";
-
-    if (!storeName) {
+    if (!email) {
       return NextResponse.json(
         {
           ok: false,
-          found: false,
-          error: "Enter your store name or domain.",
+          error:
+            "Your account does not have an email address.",
         },
         { status: 400 }
       );
     }
 
-    let supabase;
+    const body: RequestBody = await req
+      .json()
+      .catch(() => ({}));
 
-    try {
-      supabase = getAdminSupabase();
-    } catch (error) {
-      console.error(
-        "[REDEN FIND] Supabase configuration error:",
-        error
-      );
+    const connectionId =
+      typeof body.connectionId === "string"
+        ? body.connectionId.trim()
+        : "";
 
+    if (!connectionId) {
       return NextResponse.json(
         {
           ok: false,
-          found: false,
-          error: "Supabase is not configured correctly.",
+          error: "A connection ID is required.",
         },
-        { status: 500 }
+        { status: 400 }
       );
     }
 
-    const { data: connections, error } = await supabase
+    const expiresInDays =
+      typeof body.expiresInDays === "number" &&
+      Number.isFinite(body.expiresInDays)
+        ? Math.min(
+            Math.max(body.expiresInDays, 1),
+            30
+          )
+        : 7;
+
+    /*
+     * createClient() is synchronous.
+     *
+     * Do NOT use:
+     *
+     * const supabase = await createClient();
+     */
+    const supabase = createClient();
+
+    /*
+     * Verify that the authenticated DEVELOPER owns the
+     * requested REDEN connection.
+     *
+     * IMPORTANT: reden_connections.user_email is the CLIENT's
+     * email (the storefront owner), not the developer's.
+     * The authenticated developer is stored separately in
+     * developer_email. Matching user_email against the
+     * developer's session email would never succeed unless
+     * the developer happened to also be the client -- that
+     * was the bug that made this check always report
+     * "you do not have permission" for a legitimate developer.
+     */
+    const {
+      data: connection,
+      error: connectionError,
+    } = await supabase
       .from("reden_connections")
       .select(
-        `
-          id,
-          user_email,
-          developer_email,
-          store_name,
-          site_id,
-          status,
-          created_at,
-          updated_at
-        `
+        "id, site_id, store_name, user_email, developer_email, status"
       )
-      .eq("developer_email", developerEmail)
-      .order("created_at", {
-        ascending: false,
-      });
+      .eq("id", connectionId)
+      .eq("developer_email", email)
+      .maybeSingle();
 
-    if (error) {
-      console.error("[REDEN FIND] Database query failed:", {
-        message: error.message,
-        details: error.details,
-        hint: error.hint,
-        code: error.code,
-        developerEmail,
-      });
+    if (connectionError) {
+      console.error(
+        "[REDEN INVITE] Failed to load connection:",
+        connectionError
+      );
 
       return NextResponse.json(
         {
           ok: false,
-          found: false,
-          error: "Unable to search for your storefront.",
+          error:
+            "Unable to verify the storefront.",
         },
         { status: 500 }
       );
     }
 
-    const normalizedSearch = normalize(storeName);
-
-    const match = connections?.find((connection) => {
-      if (
-        typeof connection.store_name !== "string" ||
-        typeof connection.site_id !== "string"
-      ) {
-        return false;
-      }
-
-      return (
-        normalize(connection.store_name) === normalizedSearch
+    if (!connection) {
+      return NextResponse.json(
+        {
+          ok: false,
+          error:
+            "You do not have permission to create an invite for this storefront.",
+        },
+        { status: 403 }
       );
-    });
-
-    if (!match) {
-      return NextResponse.json({
-        ok: true,
-        found: false,
-        error:
-          "No storefront linked to this account was found.",
-      });
     }
+
+    /*
+     * Generate a cryptographically secure token.
+     *
+     * Only the SHA-256 hash is stored in Supabase.
+     * The raw token exists only in the returned URL.
+     */
+    const token = crypto
+      .randomBytes(32)
+      .toString("hex");
+
+    const tokenHash = hashToken(token);
+
+    const expiresAt = new Date(
+      Date.now() +
+        expiresInDays *
+          24 *
+          60 *
+          60 *
+          1000
+    ).toISOString();
+
+    /*
+     * Expire all previous unaccepted invites
+     * belonging to this storefront.
+     */
+    const { error: revokeError } =
+      await supabase
+        .from("store_invites")
+        .update({
+          expires_at: new Date().toISOString(),
+        })
+        .eq(
+          "connection_id",
+          connection.id
+        )
+        .is("accepted_at", null);
+
+    if (revokeError) {
+      console.error(
+        "[REDEN INVITE] Failed to invalidate previous invites:",
+        revokeError
+      );
+
+      return NextResponse.json(
+        {
+          ok: false,
+          error:
+            "Unable to create the invite.",
+        },
+        { status: 500 }
+      );
+    }
+
+    /*
+     * Store the hashed token.
+     */
+    const {
+      data: invite,
+      error: inviteError,
+    } = await supabase
+      .from("store_invites")
+      .insert({
+        connection_id: connection.id,
+        token_hash: tokenHash,
+        created_by: email,
+        expires_at: expiresAt,
+      })
+      .select(
+        "id, expires_at, created_at"
+      )
+      .single();
+
+    if (inviteError) {
+      console.error(
+        "[REDEN INVITE] Failed to create invite:",
+        inviteError
+      );
+
+      return NextResponse.json(
+        {
+          ok: false,
+          error:
+            "Unable to create the invite.",
+        },
+        { status: 500 }
+      );
+    }
+
+    const origin = new URL(req.url).origin;
+
+    /*
+     * IMPORTANT: matches the same path used by
+     * app/api/reden/invites/route.ts and by the actual
+     * invite-acceptance page at /invites/[token]. This was
+     * previously /invite/${token} (singular) here, which would
+     * have produced a broken link for any invite created
+     * through this route.
+     */
+    const inviteUrl =
+      `${origin}/invites/${token}`;
 
     return NextResponse.json({
       ok: true,
-      found: true,
-      store: {
-        id: match.id,
-        name: match.store_name,
-        siteId: match.site_id,
-        status: match.status,
-        clientEmail: match.user_email,
-        createdAt: match.created_at,
-        updatedAt: match.updated_at,
+
+      invite: {
+        id: invite.id,
+        url: inviteUrl,
+        expiresAt: invite.expires_at,
+        createdAt: invite.created_at,
+      },
+
+      connection: {
+        id: connection.id,
+        siteId: connection.site_id,
+        storeName: connection.store_name,
       },
     });
   } catch (error) {
-    console.error("[REDEN FIND] Unexpected route error:", {
-      message:
-        error instanceof Error ? error.message : String(error),
-      stack:
-        error instanceof Error ? error.stack : undefined,
-    });
+    console.error(
+      "[REDEN INVITE] Unexpected error:",
+      error
+    );
 
     return NextResponse.json(
       {
         ok: false,
-        found: false,
         error:
-          "Something went wrong while finding your storefront.",
+          "Unable to create the invite.",
       },
       { status: 500 }
     );
