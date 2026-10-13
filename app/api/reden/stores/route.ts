@@ -610,80 +610,144 @@ export async function GET(req: Request) {
             rawConnection as
               | InviteConnection
               | null
-          );
+/**
+ * GET /api/reden/stores
+ *
+ * Returns storefront connections belonging to the
+ * authenticated PRETHIM developer.
+ *
+ * The developer's email is stored in developer_email.
+ * user_email belongs to the storefront owner/client.
+ */
+export async function GET(req: Request) {
+  try {
+    const session = await getServerSession(authOptions);
 
-    if (
-      !connection?.site_id
-    ) {
+    const developerEmail =
+      session?.user?.email?.trim().toLowerCase();
+
+    if (!developerEmail) {
       return NextResponse.json(
         {
-          valid: false,
-          error:
-            "This invitation is no longer connected to a storefront.",
+          ok: false,
+          error: "Authentication required.",
+          stores: [],
         },
-        { status: 410 }
+        {
+          status: 401,
+          headers: {
+            "Cache-Control": "no-store",
+          },
+        }
       );
     }
 
-    // ---------------------------------------------------------
-    // SUCCESS
-    // ---------------------------------------------------------
+    let supabase;
 
-    return NextResponse.json({
-      valid: true,
+    try {
+      supabase = getAdminSupabase();
+    } catch (error) {
+      console.error(
+        "[REDEN STORES] Supabase configuration error:",
+        error instanceof Error ? error.message : error
+      );
 
-      invite: {
-        id:
-          invite.id,
+      return NextResponse.json(
+        {
+          ok: false,
+          error: "Storefront service is not configured correctly.",
+          stores: [],
+        },
+        {
+          status: 500,
+          headers: {
+            "Cache-Control": "no-store",
+          },
+        }
+      );
+    }
 
-        connectionId:
-          invite.connection_id,
+    const {
+      data: connections,
+      error: queryError,
+    } = await supabase
+      .from("reden_connections")
+      .select(
+        "id, store_name, site_id, status, user_email, created_at, updated_at"
+      )
+      .eq("developer_email", developerEmail)
+      .order("created_at", { ascending: false });
 
-        storeName:
-          connection.store_name ||
-          "Your storefront",
+    if (queryError) {
+      console.error(
+        "[REDEN STORES] Database query failed:",
+        {
+          message: queryError.message,
+          code: queryError.code,
+          details: queryError.details,
+          hint: queryError.hint,
+        }
+      );
 
-        siteId:
-          connection.site_id,
+      return NextResponse.json(
+        {
+          ok: false,
+          error: "Unable to load storefronts.",
+          stores: [],
+        },
+        {
+          status: 500,
+          headers: {
+            "Cache-Control": "no-store",
+          },
+        }
+      );
+    }
 
-        expiresAt:
-          invite.expires_at,
+    const stores = (connections ?? []).map((connection) => ({
+      id: connection.id,
+      name: connection.store_name?.trim() || "Untitled storefront",
+      siteId: connection.site_id?.trim() || "",
+      status: connection.status || "pending",
+      clientEmail: connection.user_email ?? null,
+      createdAt: connection.created_at ?? null,
+      updatedAt: connection.updated_at ?? null,
+    }));
+
+    return NextResponse.json(
+      {
+        ok: true,
+        stores,
       },
-    });
+      {
+        status: 200,
+        headers: {
+          "Cache-Control": "no-store, no-cache, must-revalidate",
+          Pragma: "no-cache",
+        },
+      }
+    );
   } catch (error) {
     console.error(
-      "[REDEN INVITE] Validation error:",
-      {
-        message:
-          error instanceof Error
-            ? error.message
-            : String(error),
-
-        stack:
-          error instanceof Error
-            ? error.stack
-            : undefined,
-      }
+      "[REDEN STORES] Unexpected error:",
+      error instanceof Error ? error.message : error
     );
 
     return NextResponse.json(
       {
-        valid: false,
-        error:
-          "Unable to validate invite.",
+        ok: false,
+        error: "Unable to load storefronts.",
+        stores: [],
       },
-      { status: 500 }
+      {
+        status: 500,
+        headers: {
+          "Cache-Control": "no-store",
+        },
+      }
     );
   }
 }
-
-/**
- * ============================================================
- * PATCH /api/reden/invites
- *
- * Customer accepts an invite.
- * ============================================================
- */
 export async function PATCH(req: Request) {
   try {
     // ---------------------------------------------------------
