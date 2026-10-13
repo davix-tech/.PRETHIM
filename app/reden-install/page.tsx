@@ -387,12 +387,14 @@ export default function RedenInstallPage() {
         );
       }
 
+      /*
+       * A valid installation record is not proof that the
+       * storefront SDK is sending events. Only REDEN's
+       * explicit connected signal confirms telemetry.
+       */
       const isConnected =
         data.connected === true ||
-        data.verified === true ||
-        data.status ===
-          "connected" ||
-        data.status === "active";
+        data.status === "connected";
 
       setConnected(isConnected);
 
