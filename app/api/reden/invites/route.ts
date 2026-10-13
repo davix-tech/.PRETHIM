@@ -3,7 +3,6 @@ import { NextResponse } from "next/server";
 import crypto from "crypto";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
-import { createClient } from "@/lib/supabase/server";
 import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 
 export const dynamic = "force-dynamic";
@@ -101,13 +100,31 @@ export async function POST(req: Request) {
         : 7;
 
     /*
-     * createClient() is synchronous.
+     * Use the server-side service-role client for this protected
+     * operation. The authenticated developer's ownership is still
+     * enforced below by matching developer_email to the session.
      *
-     * Do NOT use:
-     *
-     * const supabase = await createClient();
+     * The cookie/anon client can be filtered by Supabase RLS and
+     * return no connection even when this developer owns it.
      */
-    const supabase = createClient();
+    let supabase;
+
+    try {
+      supabase = getAdminSupabase();
+    } catch (error) {
+      console.error(
+        "[REDEN INVITE] Supabase configuration error:",
+        error instanceof Error ? error.message : error
+      );
+
+      return NextResponse.json(
+        {
+          ok: false,
+          error: "Supabase is not configured correctly.",
+        },
+        { status: 500 }
+      );
+    }
 
     /*
      * Verify that the authenticated developer owns
@@ -269,6 +286,10 @@ export async function POST(req: Request) {
 
     return NextResponse.json({
       ok: true,
+
+      // The developer dashboard reads inviteUrl from the top level.
+      inviteUrl,
+      url: inviteUrl,
 
       invite: {
         id: invite.id,
