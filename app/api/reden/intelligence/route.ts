@@ -29,6 +29,7 @@ type RequestBody = {
 
 type IntelligenceResponse = {
   ok?: boolean;
+  success?: boolean;
   answer?: string;
   evidence?: unknown;
   site?: unknown;
@@ -501,9 +502,13 @@ export async function POST(
        9. VALIDATE UPSTREAM RESPONSE
     ===================================================== */
 
+    // REDEN's API success helper returns { success: true },
+    // while PRETHIM's internal routes use { ok: true }.
+    // Accept REDEN's contract and retain compatibility with either shape.
     if (
       !intelligenceResponse.ok ||
-      intelligenceData.ok !== true
+      (intelligenceData.ok !== true &&
+        intelligenceData.success !== true)
     ) {
       console.error(
         "[REDEN INTELLIGENCE] Upstream failure:",
