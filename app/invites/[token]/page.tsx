@@ -131,7 +131,7 @@ export default function InvitePage() {
          * Give the success state a moment to render.
          */
         window.setTimeout(() => {
-          window.location.href = "/dashboard";
+          window.location.href = "/reden-dashboard";
         }, 700);
       } catch (err) {
         setError(
