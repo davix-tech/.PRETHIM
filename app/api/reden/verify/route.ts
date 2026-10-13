@@ -242,7 +242,7 @@ async function callRedenVerify(input: {
    * It must NOT receive the developer email.
    */
   params.set(
-    "owner_email",
+    "client_email",
     input.clientEmail
   );
 
@@ -373,9 +373,15 @@ async function callRedenVerify(input: {
 function isSdkConnected(
   data: VerifyResult
 ): boolean {
+  /*
+   * Verification proves that the site record exists.
+   * It does not prove that the storefront SDK has sent
+   * telemetry. REDEN's connected flag is tied to receipt
+   * of an event, so do not treat verified:true as a live
+   * SDK connection.
+   */
   return (
     data.connected === true ||
-    data.verified === true ||
     data.status === "connected"
   );
 }
