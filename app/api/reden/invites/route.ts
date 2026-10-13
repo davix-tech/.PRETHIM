@@ -107,7 +107,7 @@ export async function POST(req: Request) {
      * The cookie/anon client can be filtered by Supabase RLS and
      * return no connection even when this developer owns it.
      */
-    let supabase;
+    let supabase: ReturnType<typeof getAdminSupabase>;
 
     try {
       supabase = getAdminSupabase();
