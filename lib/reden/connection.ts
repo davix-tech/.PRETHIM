@@ -64,6 +64,7 @@ export type ConnectionLookupResult =
     };
 
 type ConnectionRow = {
+  id: string;
   site_id: string | null;
   store_name: string | null;
   status: string | null;
@@ -260,60 +261,34 @@ export async function getActiveConnection(
   }
 
   /* =======================================================
-     3. QUERY ACTIVE CONNECTIONS
+     3. QUERY DIRECT OWNERSHIP
   ======================================================= */
 
   const {
-    data: connections,
-    error,
+    data: directConnections,
+    error: directError,
   } = await supabase
     .from("reden_connections")
     .select(
-      "site_id, store_name, status, updated_at"
+      "id, site_id, store_name, status, updated_at"
     )
-    .eq(
-      "user_email",
-      normalizedEmail
-    )
-    .eq(
-      "status",
-      ACTIVE_CONNECTION_STATUS
-    )
-    .order(
-      "updated_at",
-      {
-        ascending: false,
-        nullsFirst: false,
-      }
-    )
-    /*
-     * We only need to know whether there is:
-     *
-     * 0 connections
-     * 1 connection
-     * >1 connections
-     *
-     * Therefore two rows are sufficient.
-     */
+    .eq("user_email", normalizedEmail)
+    .eq("status", ACTIVE_CONNECTION_STATUS)
+    .order("updated_at", {
+      ascending: false,
+      nullsFirst: false,
+    })
     .limit(2)
     .returns<ConnectionRow[]>();
 
-  /* =======================================================
-     4. HANDLE DATABASE ERROR
-  ======================================================= */
-
-  if (error) {
+  if (directError) {
     console.error(
-      "[REDEN CONNECTION] Active connection lookup failed:",
+      "[REDEN CONNECTION] Direct connection lookup failed:",
       {
-        message:
-          error.message,
-        details:
-          error.details,
-        hint:
-          error.hint,
-        code:
-          error.code,
+        message: directError.message,
+        details: directError.details,
+        hint: directError.hint,
+        code: directError.code,
       }
     );
 
@@ -324,13 +299,120 @@ export async function getActiveConnection(
   }
 
   /* =======================================================
-     5. NO ACTIVE CONNECTION
+     4. QUERY EXPLICIT INVITE MEMBERSHIP
+
+     Customers who accept a storefront invitation are recorded
+     in reden_members. Their email is not necessarily the
+     original connection's user_email, so direct-owner lookup
+     alone incorrectly reports installation_not_found.
   ======================================================= */
 
-  if (
-    !connections ||
-    connections.length === 0
-  ) {
+  const {
+    data: memberships,
+    error: membershipError,
+  } = await supabase
+    .from("reden_members")
+    .select("connection_id")
+    .eq("user_email", normalizedEmail)
+    .eq("role", "store_owner")
+    .limit(100)
+    .returns<Array<{ connection_id: string }>>();
+
+  if (membershipError) {
+    console.error(
+      "[REDEN CONNECTION] Membership lookup failed:",
+      {
+        message: membershipError.message,
+        details: membershipError.details,
+        hint: membershipError.hint,
+        code: membershipError.code,
+      }
+    );
+
+    return {
+      ok: false,
+      reason: "lookup_failed",
+    };
+  }
+
+  const memberConnectionIds = [
+    ...new Set(
+      (memberships ?? [])
+        .map((membership) => membership.connection_id)
+        .filter(
+          (connectionId): connectionId is string =>
+            typeof connectionId === "string" &&
+            connectionId.length > 0
+        )
+    ),
+  ];
+
+  let memberConnections: ConnectionRow[] = [];
+
+  if (memberConnectionIds.length > 0) {
+    const {
+      data,
+      error: memberConnectionError,
+    } = await supabase
+      .from("reden_connections")
+      .select(
+        "id, site_id, store_name, status, updated_at"
+      )
+      .in("id", memberConnectionIds)
+      .eq("status", ACTIVE_CONNECTION_STATUS)
+      .order("updated_at", {
+        ascending: false,
+        nullsFirst: false,
+      })
+      .limit(2)
+      .returns<ConnectionRow[]>();
+
+    if (memberConnectionError) {
+      console.error(
+        "[REDEN CONNECTION] Member storefront lookup failed:",
+        {
+          message: memberConnectionError.message,
+          details: memberConnectionError.details,
+          hint: memberConnectionError.hint,
+          code: memberConnectionError.code,
+        }
+      );
+
+      return {
+        ok: false,
+        reason: "lookup_failed",
+      };
+    }
+
+    memberConnections = data ?? [];
+  }
+
+  /* =======================================================
+     5. COMBINE + DEDUPLICATE AUTHORIZED CONNECTIONS
+
+     A user may be both the direct owner and an explicit member
+     of the same connection. Count that connection only once.
+     Never guess when multiple distinct active storefronts exist.
+  ======================================================= */
+
+  const connectionById = new Map<string, ConnectionRow>();
+
+  for (const connection of [
+    ...(directConnections ?? []),
+    ...memberConnections,
+  ]) {
+    if (connection.id) {
+      connectionById.set(connection.id, connection);
+    }
+  }
+
+  const connections = [...connectionById.values()];
+
+  /* =======================================================
+     6. NO ACTIVE CONNECTION
+  ======================================================= */
+
+  if (connections.length === 0) {
     return {
       ok: false,
       reason: "not_found",
@@ -338,50 +420,28 @@ export async function getActiveConnection(
   }
 
   /* =======================================================
-     6. MULTIPLE ACTIVE CONNECTIONS
+     7. MULTIPLE ACTIVE CONNECTIONS
   ======================================================= */
 
-  if (
-    connections.length > 1
-  ) {
+  if (connections.length > 1) {
     console.error(
       "[REDEN CONNECTION] Multiple active connections detected:",
       {
-        ownerEmail:
-          normalizedEmail,
-        connections:
-          connections.map(
-            (row) => ({
-              siteId:
-                row.site_id,
-              storeName:
-                row.store_name,
-              status:
-                row.status,
-              updatedAt:
-                row.updated_at,
-            })
-          ),
+        ownerEmail: normalizedEmail,
+        connections: connections.map((row) => ({
+          siteId: row.site_id,
+          storeName: row.store_name,
+          status: row.status,
+          updatedAt: row.updated_at,
+        })),
       }
     );
 
-    /*
-     * DO NOT pick connections[0].
-     *
-     * Picking the most recently updated row was the
-     * dangerous behaviour because an old/new storefront
-     * could silently become the tenant used by metrics
-     * or intelligence.
-     */
     return {
       ok: false,
       reason: "ambiguous",
     };
   }
-
-  /* =======================================================
-     7. VALIDATE THE SINGLE ROW
-  ======================================================= */
 
   const row =
     connections[0];
