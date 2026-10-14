@@ -28,16 +28,49 @@ type EvidenceEvent = {
 };
 
 type IntelligenceEvidence = {
-  visitors?: number;
-  events?: EvidenceEvent[];
-  decisions?: {
+  // Current REDEN evidence contract.
+  uniqueSessions?: number;
+  eventCounts?: Record<string, number>;
+  decisions?: number | {
     completed?: number;
     conversions?: number;
     conversionRate?: number;
     revenue?: number;
   };
+  conversions?: number;
+  decisionRevenue?: number;
   purchaseRevenue?: number;
+
+  // Legacy/alternate contract, retained for compatibility.
+  visitors?: number;
+  events?: EvidenceEvent[];
 };
+
+function finiteNumber(value: unknown): number | null {
+  if (typeof value !== "number" && typeof value !== "string") {
+    return null;
+  }
+
+  if (typeof value === "string" && value.trim() === "") {
+    return null;
+  }
+
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : null;
+}
+
+function evidenceEventCount(
+  evidence: IntelligenceEvidence,
+  name: string
+): number {
+  const directCount = finiteNumber(evidence.eventCounts?.[name]);
+
+  if (directCount !== null) {
+    return directCount;
+  }
+
+  return eventCount(evidence.events, name);
+}
 
 type IntelligenceResponse = {
   ok?: boolean;
@@ -336,34 +369,63 @@ export async function GET(req: Request) {
       data.evidence || {};
 
     /*
-     * Prefer real storefront-reported purchase revenue
-     * from session_summaries over bandit-attribution
-     * revenue from the decisions table.
+     * REDEN's current evidence contract uses:
+     * - uniqueSessions for visitors
+     * - eventCounts as an event-name -> count map
+     * - decisions/conversions as top-level counts
+     * - purchaseRevenue and decisionRevenue as separate totals
+     *
+     * Older responses may use visitors, events[], or a nested
+     * decisions object, so normalize both shapes here.
      */
-    const revenue = Number(
-      evidence.purchaseRevenue ??
-        evidence.decisions?.revenue ??
-        0
-    );
+    const revenue =
+      finiteNumber(evidence.purchaseRevenue) ??
+      (typeof evidence.decisions === "object" && evidence.decisions !== null
+        ? finiteNumber(evidence.decisions.revenue)
+        : null) ??
+      finiteNumber(evidence.decisionRevenue) ??
+      0;
 
-    const visitors = Number(
-      evidence.visitors ?? 0
-    );
+    const visitors =
+      finiteNumber(evidence.uniqueSessions) ??
+      finiteNumber(evidence.visitors) ??
+      0;
 
-    const checkouts = eventCount(
-      evidence.events,
+    const checkouts = evidenceEventCount(
+      evidence,
       "CHECKOUT_STARTED"
     );
 
-    const purchases = eventCount(
-      evidence.events,
+    const purchases = evidenceEventCount(
+      evidence,
       "PURCHASE"
     );
 
-    const conversionRate = Number(
-      evidence.decisions?.conversionRate ??
-        0
-    );
+    const nestedDecisions =
+      typeof evidence.decisions === "object" && evidence.decisions !== null
+        ? evidence.decisions
+        : null;
+
+    const completedDecisions =
+      nestedDecisions
+        ? finiteNumber(nestedDecisions.completed)
+        : finiteNumber(evidence.decisions);
+
+    const conversions =
+      nestedDecisions
+        ? finiteNumber(nestedDecisions.conversions)
+        : finiteNumber(evidence.conversions);
+
+    const reportedConversionRate =
+      nestedDecisions
+        ? finiteNumber(nestedDecisions.conversionRate)
+        : null;
+
+    const conversionRate =
+      reportedConversionRate ??
+      (completedDecisions !== null && completedDecisions > 0 && conversions !== null
+        ? (conversions / completedDecisions) * 100
+        : 0);
 
     /* =====================================================
        12. RETURN METRICS
