@@ -32,8 +32,27 @@ export async function GET(req: Request) {
   try {
     const session = await getServerSession(authOptions);
 
-    const developerEmail =
-      session?.user?.email?.trim().toLowerCase();
+    // Support both PRETHIM sign-in paths: NextAuth (Google) and
+    // Supabase Auth (email magic link). Only use the verified server session.
+    let developerEmail =
+      session?.user?.email?.trim().toLowerCase() || "";
+
+    if (!developerEmail) {
+      try {
+        const { createClient: createSupabaseServerClient } = await import("@/lib/supabase/server");
+        const authClient = await createSupabaseServerClient();
+        const { data: { user }, error: authError } = await authClient.auth.getUser();
+
+        if (!authError && user?.email) {
+          developerEmail = user.email.trim().toLowerCase();
+        }
+      } catch (authError) {
+        console.error(
+          "[REDEN STORES] Supabase session lookup failed:",
+          authError instanceof Error ? authError.message : authError
+        );
+      }
+    }
 
     if (!developerEmail) {
       return NextResponse.json(
