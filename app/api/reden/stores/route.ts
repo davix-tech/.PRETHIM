@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { createClient as createSupabaseClient } from "@supabase/supabase-js";
+import { createClient as createSupabaseServerClient } from "../../../../lib/supabase/server";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -39,8 +40,7 @@ export async function GET(req: Request) {
 
     if (!developerEmail) {
       try {
-        const { createClient: createSupabaseServerClient } = await import("@/lib/supabase/server");
-        const authClient = await createSupabaseServerClient();
+        const authClient = createSupabaseServerClient();
         const { data: { user }, error: authError } = await authClient.auth.getUser();
 
         if (!authError && user?.email) {
