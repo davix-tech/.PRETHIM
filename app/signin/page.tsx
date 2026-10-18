@@ -21,7 +21,7 @@ export default function SignInPage() {
 
   useEffect(() => {
     if (status === "authenticated") {
-      router.replace("/reden-dashboard");
+      router.replace("/dashboard");
     }
   }, [status, router]);
 
@@ -108,7 +108,7 @@ export default function SignInPage() {
             type="button"
             onClick={() =>
               signIn("google", {
-                callbackUrl: "/reden-dashboard",
+                callbackUrl: "/dashboard",
               })
             }
             className="flex h-11 w-full items-center justify-center gap-2.5 rounded-xl border border-white/[0.12] bg-[#F5F1EA] text-xs font-semibold text-[#0A0A0A] shadow-[0_4px_18px_rgba(0,0,0,0.16)] transition-all duration-200 hover:-translate-y-px hover:bg-white hover:shadow-[0_8px_28px_rgba(0,0,0,0.25)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#C97C3E]/60"
@@ -225,12 +225,6 @@ export default function SignInPage() {
           )}
         </div>
 
-        {/* Technical Perimeter Footer */}
-        <div className="relative z-10 flex items-center justify-between border-t border-white/[0.07] bg-black/10 px-7 py-4 select-none sm:px-9">
-          <span className="text-[9px] font-medium tracking-[0.16em] text-[#68615b]">
-            PRETHIM NETWORK SECURITY
-          </span>
-        </div>
       </div>
     </main>
   );
