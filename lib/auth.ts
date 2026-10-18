@@ -37,8 +37,22 @@ export const authOptions: NextAuthOptions = {
       return session;
     },
 
-    async redirect({ baseUrl }) {
-      return `${baseUrl}/dashboard`;
+    async redirect({ url, baseUrl }) {
+      // Allow relative callback URLs and same-origin absolute URLs only.
+      if (url.startsWith("/")) {
+        return `${baseUrl}${url}`;
+      }
+
+      try {
+        const target = new URL(url);
+        if (target.origin === baseUrl) {
+          return target.toString();
+        }
+      } catch {
+        // Fall back to the product dashboard for malformed callback URLs.
+      }
+
+      return `${baseUrl}/reden-dashboard`;
     },
   },
 };
