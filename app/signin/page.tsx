@@ -21,7 +21,7 @@ export default function SignInPage() {
 
   useEffect(() => {
     if (status === "authenticated") {
-      router.replace("/dashboard");
+      router.replace("/reden-dashboard");
     }
   }, [status, router]);
 
@@ -94,7 +94,7 @@ export default function SignInPage() {
             type="button"
             onClick={() =>
               signIn("google", {
-                callbackUrl: "/dashboard",
+                callbackUrl: "/reden-dashboard",
               })
             }
             className="w-full h-10 bg-[#F5F1EA] hover:bg-white text-[#0A0A0A] border-none rounded font-semibold text-xs flex items-center justify-center gap-2.5 transition-all duration-150 cursor-pointer focus:outline-none"
