@@ -52,7 +52,7 @@ export const authOptions: NextAuthOptions = {
         // Fall back to the product dashboard for malformed callback URLs.
       }
 
-      return `${baseUrl}/reden-dashboard`;
+      return `${baseUrl}/dashboard`;
     },
   },
 };
