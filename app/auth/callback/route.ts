@@ -24,6 +24,6 @@ export async function GET(request: Request) {
   }
 
   return NextResponse.redirect(
-    new URL("/reden-dashboard", requestUrl.origin)
+    new URL("/dashboard", requestUrl.origin)
   );
 }
