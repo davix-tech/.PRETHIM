@@ -67,5 +67,12 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/dashboard/:path*", "/reden/:path*", "/reden-dashboard/:path*"],
+  matcher: [
+    "/dashboard/:path*",
+    "/reden/:path*",
+    "/reden-addstore/:path*",
+    "/reden-dashboard/:path*",
+    "/reden-developer/:path*",
+    "/reden-install/:path*",
+  ],
 };
