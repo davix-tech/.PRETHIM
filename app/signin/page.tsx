@@ -26,7 +26,15 @@ export default function SignInPage() {
   }, [status, router]);
 
   if (status === "loading") {
-    return <div className="min-h-screen bg-[#070605]" />;
+    return (
+      <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-[#080706]">
+        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_50%_0%,rgba(201,124,62,0.10),transparent_48%)]" />
+        <div className="relative flex items-center gap-3 rounded-2xl border border-white/[0.08] bg-white/[0.025] px-5 py-4 text-xs text-[#8F8676] shadow-[0_24px_100px_rgba(0,0,0,0.25)] backdrop-blur-2xl">
+          <span className="h-2 w-2 animate-pulse rounded-full bg-[#C97C3E]" />
+          Securing your PRETHIM session…
+        </div>
+      </div>
+    );
   }
 
   const handleMagicLink = async (e: React.FormEvent) => {
@@ -65,26 +73,32 @@ export default function SignInPage() {
   };
 
   return (
-    <main className="min-h-screen bg-[#070605] flex items-center justify-center px-5 py-10 antialiased selection:bg-[#FF5A1F]/20 selection:text-white relative overflow-hidden font-sans">
+    <main className="relative flex min-h-screen items-center justify-center overflow-hidden bg-[#080706] px-5 py-10 antialiased text-[#ECE4D8] selection:bg-[#C97C3E]/25 selection:text-white">
+      <div className="pointer-events-none fixed inset-0 overflow-hidden">
+        <div className="absolute left-[12%] top-[-260px] h-[560px] w-[560px] rounded-full bg-[#C97C3E]/[0.075] blur-[145px]" />
+        <div className="absolute bottom-[-300px] right-[-140px] h-[520px] w-[520px] rounded-full bg-[#7C93A6]/[0.045] blur-[150px]" />
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_50%_45%,rgba(255,255,255,0.018),transparent_58%)]" />
+      </div>
 
       {/* Premium Pure Ambient Depth Glow */}
       <div className="absolute top-[15%] left-1/2 -translate-x-1/2 -translate-y-1/2 w-[550px] h-[550px] bg-[radial-gradient(circle,rgba(255,90,31,0.04)_0%,transparent_70%)] pointer-events-none z-0 blur-xl" />
 
       {/* Auth Container Frame */}
-      <div className="relative z-10 w-full max-w-[370px] bg-[#0B0A08] border border-[#1C1712] rounded-md shadow-[0_32px_64px_rgba(0,0,0,0.7)] overflow-hidden">
+      <div className="relative z-10 w-full max-w-[410px] overflow-hidden rounded-2xl border border-white/[0.085] bg-white/[0.032] shadow-[0_24px_100px_rgba(0,0,0,0.35)] backdrop-blur-2xl">
+        <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-white/[0.05] via-transparent to-transparent" />
 
         {/* Top Boundary Highlight Line */}
-        <div className="h-px w-full bg-gradient-to-r from-transparent via-[#7A3613] to-transparent" />
+        <div className="relative z-10 h-px w-full bg-gradient-to-r from-transparent via-white/[0.16] to-transparent" />
 
-        <div className="p-7 sm:p-8 pb-7">
+        <div className="relative z-10 p-7 pb-8 sm:p-9">
 
           {/* Main Context Typography */}
           <div className="mb-7">
-            <h1 className="text-white text-xl font-semibold tracking-tight">
+            <h1 className="text-[22px] font-semibold tracking-[-0.045em] text-[#F5F1EA]">
               PRETHIM
             </h1>
 
-            <p className="text-[#6E6358] text-xs leading-relaxed mt-1.5">
+            <p className="mt-2 text-[12px] leading-relaxed text-[#8F8676]">
               Sign in to your workspace account.
             </p>
           </div>
@@ -97,7 +111,7 @@ export default function SignInPage() {
                 callbackUrl: "/reden-dashboard",
               })
             }
-            className="w-full h-10 bg-[#F5F1EA] hover:bg-white text-[#0A0A0A] border-none rounded font-semibold text-xs flex items-center justify-center gap-2.5 transition-all duration-150 cursor-pointer focus:outline-none"
+            className="flex h-11 w-full items-center justify-center gap-2.5 rounded-xl border border-white/[0.12] bg-[#F5F1EA] text-xs font-semibold text-[#0A0A0A] shadow-[0_4px_18px_rgba(0,0,0,0.16)] transition-all duration-200 hover:-translate-y-px hover:bg-white hover:shadow-[0_8px_28px_rgba(0,0,0,0.25)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#C97C3E]/60"
           >
             <svg
               width="15"
@@ -128,18 +142,18 @@ export default function SignInPage() {
 
           {/* Separation Boundary */}
           <div className="flex items-center gap-3 my-5">
-            <div className="flex-1 h-px bg-[#1C1712]" />
+            <div className="h-px flex-1 bg-white/[0.09]" />
 
-            <span className="font-mono text-[10px] text-[#3D362E] select-none">
+            <span className="select-none text-[10px] tracking-[0.08em] text-[#68615b]">
               or
             </span>
 
-            <div className="flex-1 h-px bg-[#1C1712]" />
+            <div className="h-px flex-1 bg-white/[0.09]" />
           </div>
 
           {/* Email Magic Link */}
           {emailStatus === "sent" ? (
-            <div className="p-3.5 rounded bg-[#0A0604] border border-[#1C1712] text-[#6E6358] text-xs leading-relaxed text-left">
+            <div className="rounded-xl border border-white/[0.08] bg-black/20 p-4 text-left text-xs leading-relaxed text-[#8F8676]">
               Check{" "}
               <span className="text-[#F5F1EA] font-medium">
                 {email}
@@ -154,7 +168,7 @@ export default function SignInPage() {
                     setEmail("");
                     setErrorMsg("");
                   }}
-                  className="bg-transparent border-none text-[#3D362E] hover:text-[#F5F1EA] text-[11px] underline cursor-pointer p-0 transition-colors duration-150 focus:outline-none"
+                  className="cursor-pointer border-none bg-transparent p-0 text-[11px] text-[#8F8676] underline transition-colors duration-150 hover:text-[#F5F1EA] focus:outline-none"
                 >
                   Use a different email
                 </button>
@@ -163,9 +177,9 @@ export default function SignInPage() {
           ) : (
             <form
               onSubmit={handleMagicLink}
-              className="flex flex-col gap-3"
+              className="flex flex-col gap-3.5"
             >
-              <div className="space-y-1.5">
+              <div className="space-y-2">
                 <input
                   type="email"
                   value={email}
@@ -180,15 +194,15 @@ export default function SignInPage() {
                   placeholder="name@company.com"
                   autoComplete="email"
                   disabled={emailStatus === "sending"}
-                  className={`w-full h-10 bg-black border rounded px-3 text-[#F5F1EA] text-xs outline-none transition-all duration-150 focus:border-[#7A3613] focus:ring-4 focus:ring-[#FF5A1F]/5 ${
+                  className={`h-11 w-full rounded-xl border bg-black/25 px-3.5 text-xs text-[#F5F1EA] outline-none transition-all duration-200 placeholder:text-[#625c56] focus:border-[#C97C3E]/50 focus:bg-black/35 focus:ring-4 focus:ring-[#C97C3E]/[0.08] ${
                     emailStatus === "error"
-                      ? "border-[#E5484D]"
-                      : "border-[#1C1712]"
+                      ? "border-[#E5484D]/80"
+                      : "border-white/[0.10]"
                   }`}
                 />
 
                 {emailStatus === "error" && (
-                  <p className="text-[#E5484D] text-[11px] text-left">
+                  <p className="text-left text-[11px] text-[#ff8060]">
                     {errorMsg}
                   </p>
                 )}
@@ -197,7 +211,7 @@ export default function SignInPage() {
               <button
                 type="submit"
                 disabled={emailStatus === "sending"}
-                className={`w-full h-10 bg-[#0A0807] hover:bg-[#100D09] text-[#F5F1EA] border border-[#1C1712] hover:border-[#2A2118] rounded font-semibold text-xs transition-all duration-150 focus:outline-none ${
+                className={`h-11 w-full rounded-xl border border-white/[0.10] bg-white/[0.025] text-xs font-semibold text-[#F5F1EA] transition-all duration-200 hover:border-white/[0.18] hover:bg-white/[0.055] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#C97C3E]/50 ${
                   emailStatus === "sending"
                     ? "opacity-50 cursor-default"
                     : "cursor-pointer"
@@ -212,8 +226,8 @@ export default function SignInPage() {
         </div>
 
         {/* Technical Perimeter Footer */}
-        <div className="border-t border-[#1C1712] px-8 py-4 flex items-center justify-between bg-[#090806] select-none">
-          <span className="font-mono text-[10px] tracking-wider text-[#3D362E]">
+        <div className="relative z-10 flex items-center justify-between border-t border-white/[0.07] bg-black/10 px-7 py-4 select-none sm:px-9">
+          <span className="text-[9px] font-medium tracking-[0.16em] text-[#68615b]">
             PRETHIM NETWORK SECURITY
           </span>
         </div>
