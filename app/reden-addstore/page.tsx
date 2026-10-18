@@ -102,17 +102,12 @@ export default function RedenAddStorePage() {
         : [];
 
       /*
-       * Every connected storefront must expose a valid siteId.
-       * siteId is the REDEN tenant identifier and is required
-       * by subsequent developer/dashboard routes.
+       * Keep every connection returned by the authenticated stores API.
+       * Some older connections may not have a siteId yet; hiding them
+       * here makes existing database records look like no stores exist.
+       * The developer page supports opening a connection by its ID.
        */
-      const validStores = nextStores.filter(
-        (store: StoreConnection) =>
-          typeof store?.siteId === "string" &&
-          store.siteId.trim().length > 0
-      );
-
-      setStores(validStores);
+      setStores(nextStores);
     } catch (err) {
       setError(
         err instanceof Error
@@ -400,9 +395,15 @@ export default function RedenAddStorePage() {
                          * identifier. Do not route using the database
                          * connection id.
                          */
-                        href={`/reden-developer?siteId=${encodeURIComponent(
-                          store.siteId
-                        )}`}
+                        href={
+                          store.siteId?.trim()
+                            ? `/reden-developer?siteId=${encodeURIComponent(
+                                store.siteId
+                              )}`
+                            : `/reden-developer?store=${encodeURIComponent(
+                                store.id
+                              )}`
+                        }
                         className={`group relative flex min-h-[92px] w-full items-center justify-between px-5 py-5 text-left transition-colors duration-300 hover:bg-white/[0.028] sm:px-7 ${
                           index !== stores.length - 1
                             ? "border-b border-white/[0.055]"
