@@ -74,6 +74,7 @@ function evidenceEventCount(
 
 type IntelligenceResponse = {
   ok?: boolean;
+  success?: boolean;
   answer?: string;
   evidence?: IntelligenceEvidence;
   error?: string;
@@ -342,7 +343,7 @@ export async function GET(req: Request) {
 
     if (
       !response.ok ||
-      data.ok !== true
+      (data.ok !== true && data.success !== true)
     ) {
       console.error(
         "[REDEN METRICS] Upstream failure:",
