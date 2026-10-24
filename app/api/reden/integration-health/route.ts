@@ -25,25 +25,52 @@ type EvidenceEvent = {
 
 type IntelligenceEvidence = {
   events?: EvidenceEvent[];
+  eventCounts?: Record<string, number | string | null | undefined>;
+  pageViews?: number | string | null;
+  productViews?: number | string | null;
+  addToCart?: number | string | null;
+  checkoutStarted?: number | string | null;
+  purchases?: number | string | null;
 };
 
 type IntelligenceResponse = {
   ok?: boolean;
+  success?: boolean;
   evidence?: IntelligenceEvidence;
   error?: string;
 };
 
 function eventReceived(
-  events: EvidenceEvent[] | undefined,
+  evidence: IntelligenceEvidence | undefined,
   name: string
 ): boolean {
-  return (
-    events?.some(
-      (item) =>
-        item.event === name &&
-        Number(item.count) > 0
-    ) ?? false
-  );
+  if (!evidence) return false;
+
+  // Current REDEN returns eventCounts as a map. Keep support for
+  // the earlier events-array shape so this route remains backward-compatible.
+  const countFromMap = Number(evidence.eventCounts?.[name] ?? 0);
+  if (Number.isFinite(countFromMap) && countFromMap > 0) {
+    return true;
+  }
+
+  const countFromArray = evidence.events?.find(
+    (item) => item.event === name
+  )?.count;
+
+  if (Number(countFromArray ?? 0) > 0) {
+    return true;
+  }
+
+  // Current REDEN also exposes these aggregate evidence fields.
+  const aggregateFields: Partial<Record<string, number | string | null>> = {
+    PAGE_VIEW: evidence.pageViews,
+    PRODUCT_VIEW: evidence.productViews,
+    ADD_TO_CART: evidence.addToCart,
+    CHECKOUT_STARTED: evidence.checkoutStarted,
+    PURCHASE: evidence.purchases,
+  };
+
+  return Number(aggregateFields[name] ?? 0) > 0;
 }
 
 function jsonError(
@@ -336,7 +363,7 @@ export async function GET(req: Request) {
 
     if (
       !response.ok ||
-      data.ok !== true
+      (data.ok !== true && data.success !== true)
     ) {
       console.error(
         "[REDEN INTEGRATION HEALTH] Upstream failure:",
@@ -362,44 +389,25 @@ export async function GET(req: Request) {
        10. DETERMINE EVENT HEALTH
     ===================================================== */
 
-    const events =
-      data.evidence?.events;
+    const evidence = data.evidence;
 
     const pageView =
-      eventReceived(
-        events,
-        "PAGE_VIEW"
-      );
+      eventReceived(evidence, "PAGE_VIEW");
 
     const productView =
-      eventReceived(
-        events,
-        "PRODUCT_VIEW"
-      );
+      eventReceived(evidence, "PRODUCT_VIEW");
 
     const addToCart =
-      eventReceived(
-        events,
-        "ADD_TO_CART"
-      );
+      eventReceived(evidence, "ADD_TO_CART");
 
     const checkoutStarted =
-      eventReceived(
-        events,
-        "CHECKOUT_STARTED"
-      );
+      eventReceived(evidence, "CHECKOUT_STARTED");
 
     const purchase =
-      eventReceived(
-        events,
-        "PURCHASE"
-      );
+      eventReceived(evidence, "PURCHASE");
 
     const sessionEnd =
-      eventReceived(
-        events,
-        "SESSION_END"
-      );
+      eventReceived(evidence, "SESSION_END");
 
     /*
      * PAGE_VIEW proves that the SDK is installed
