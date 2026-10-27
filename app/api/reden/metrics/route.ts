@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth";
 
 import { authOptions } from "@/lib/auth";
 import { getActiveConnection } from "@/lib/reden/connection";
+import { getAuthenticatedEmail } from "@/lib/authenticated-email";
 import {
   REDEN_API_URL,
   errorMessage,
