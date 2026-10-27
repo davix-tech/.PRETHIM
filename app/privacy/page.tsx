@@ -1,606 +1,172 @@
 import Link from "next/link";
 
 export const metadata = {
-  title: "Privacy | PRETHIM",
+  title: "Privacy Policy | PRETHIM",
   description:
-    "Privacy policy for PRETHIM and REDEN, including how we collect, use, protect, and retain information.",
+    "How PRETHIM handles personal information across its website, software, APIs, and services.",
 };
+
+const sections = [
+  {
+    title: "1. Who this policy covers",
+    paragraphs: [
+      "This Privacy Policy explains how PRETHIM ("PRETHIM", "we", "us", or "our") collects, uses, stores, and shares personal information when you visit our website, contact us, create an account, use our software, or interact with our APIs and other services.",
+      "Some PRETHIM products may have a separate privacy notice describing product-specific data and processing. That notice supplements this policy and should be read alongside it.",
+      "When an organisation uses a PRETHIM service to process personal information about its own customers, that organisation may decide why and how the information is processed. In those cases, the organisation is responsible for its own legal obligations, and PRETHIM's role depends on the service and the applicable agreement."
+    ],
+  },
+  {
+    title: "2. Information we collect",
+    paragraphs: [
+      "The information collected depends on how you interact with PRETHIM, the features you use, and the information you choose to provide. It may include the following categories."
+    ],
+    items: [
+      ["Contact and account details", "such as your name, email address, organisation name, account identifiers, and information used to create, authenticate, and manage an account."],
+      ["Service and integration details", "such as API requests, integration identifiers, configuration settings, connection status, usage records, and support correspondence."],
+      ["Technical information", "such as IP address, browser or device information, log entries, timestamps, diagnostic details, and information needed to investigate errors or protect a service."],
+      ["Information you submit", "such as messages, feedback, files, or other material you choose to provide when using a service or contacting us."],
+      ["Transaction information", "where a paid service is offered, such as plan, billing status, transaction references, and records needed to administer payments. Payment details may be handled by the relevant payment provider."]
+    ],
+  },
+  {
+    title: "3. Information received through customer integrations",
+    paragraphs: [
+      "A PRETHIM product may receive information from a business or an application that the business connects. The categories depend on that product, the business's configuration, and the events or fields it sends.",
+      "PRETHIM does not intend this general policy to be a complete description of every product's data collection. The applicable product privacy notice and customer agreement should identify the relevant data flows and responsibilities.",
+      "If you are an end user of a business that uses PRETHIM technology, that business is usually the first point of contact for questions about information collected through its website or service. We will direct requests to the relevant business when appropriate and assist as required by law and our agreement."
+    ],
+  },
+  {
+    title: "4. How we use information",
+    paragraphs: [
+      "We may use information to provide and operate services; create and manage accounts; authenticate requests; process integrations; respond to questions; provide technical support; maintain service quality; diagnose errors; monitor usage and enforce applicable limits; detect fraud, abuse, and security incidents; process payments; comply with legal obligations; and establish or defend legal claims.",
+      "Where permitted by law, we may use service usage and diagnostic information to understand reliability and improve our services. We will not use personal information for a materially different purpose where applicable law requires additional notice or permission and that requirement has not been met."
+    ],
+  },
+  {
+    title: "5. Legal grounds for processing",
+    paragraphs: [
+      "Where applicable data-protection law requires a lawful basis, the basis depends on the purpose and context. It may include performing a contract or taking steps requested before a contract, complying with a legal obligation, pursuing legitimate interests that are not overridden by individual rights, or consent where consent is required or chosen.",
+      "Where we rely on consent, you may withdraw it as permitted by law. Withdrawal does not make processing carried out before withdrawal unlawful."
+    ],
+  },
+  {
+    title: "6. When information is shared",
+    paragraphs: [
+      "We may share information with service providers that support hosting, infrastructure, analytics, communications, payment processing, customer support, or security, to the extent needed for their work. Those providers may process information under their own terms or under contractual arrangements with PRETHIM, depending on the service.",
+      "We may disclose information where required by law, valid legal process, or a lawful request from a public authority; where reasonably necessary to protect people, rights, systems, or property; or in connection with a merger, financing, restructuring, or transfer of a business, subject to applicable law.",
+      "We do not sell personal information as that term is defined under laws that apply to such activity. We do not disclose information to third parties for their independent purposes except as described in this policy, with your direction, or as otherwise permitted or required by law."
+    ],
+  },
+  {
+    title: "7. Retention",
+    paragraphs: [
+      "We keep personal information for as long as reasonably necessary for the purpose for which it was collected, including to provide services, maintain business and security records, resolve disputes, enforce agreements, and meet legal obligations.",
+      "Retention periods vary by data type, service, configuration, and legal requirements. When information is no longer required, we may delete it, anonymise it, or securely dispose of it where appropriate. Copies may remain in routine backups for a limited period before being overwritten or removed."
+    ],
+  },
+  {
+    title: "8. Security",
+    paragraphs: [
+      "We take steps intended to protect information against unauthorised access, loss, misuse, alteration, and disclosure. No method of transmission, storage, or electronic processing is completely secure, and we cannot guarantee absolute security.",
+      "You are responsible for protecting your account, API keys, devices, and credentials, and for limiting access to people who need it. If you suspect unauthorised access involving a PRETHIM account or integration, contact us through the support channel associated with that service."
+    ],
+  },
+  {
+    title: "9. International processing",
+    paragraphs: [
+      "PRETHIM and its service providers may process or store information in countries other than the country where you live. Data-protection laws in those countries may differ from the laws where you are located.",
+      "Where applicable law requires safeguards for international transfers, we will seek to use an appropriate transfer mechanism or other safeguard for the relevant processing."
+    ],
+  },
+  {
+    title: "10. Your rights and choices",
+    paragraphs: [
+      "Depending on your location and the circumstances, applicable law may give you the right to request access to personal information, correction of inaccurate information, deletion, restriction or objection to certain processing, portability, or withdrawal of consent. You may also have the right to complain to a relevant data-protection authority.",
+      "To protect information, we may need to verify your identity before acting on a request. Some rights are subject to legal exceptions. If PRETHIM processes information on behalf of a business, you may need to contact that business directly; we will assist it where required by law and the relevant agreement.",
+      "You can stop using a service or close an account where the service provides that option. Some records may need to be retained for legitimate operational or legal reasons."
+    ],
+  },
+  {
+    title: "11. Cookies and similar technologies",
+    paragraphs: [
+      "Our website or services may use cookies or similar technologies where needed for essential functions, session management, preferences, security, or other purposes described by the relevant service. The technologies used may differ between products.",
+      "You can control cookies through your browser settings. Blocking certain cookies may affect how a website or service works. Where required, we will provide additional information or obtain consent for non-essential technologies."
+    ],
+  },
+  {
+    title: "12. Children's privacy",
+    paragraphs: [
+      "PRETHIM services are designed primarily for businesses, developers, and organisations and are not directed to children. We do not knowingly seek to collect personal information directly from children in a manner that violates applicable law.",
+      "If you believe a child has provided personal information to PRETHIM, contact us through the support channel associated with the relevant service so the matter can be reviewed."
+    ],
+  },
+  {
+    title: "13. Third-party websites and services",
+    paragraphs: [
+      "Our website or services may link to or integrate with third-party websites, software, or platforms. Their privacy practices are governed by their own policies, and PRETHIM is not responsible for how they independently collect or use information. Review their policies before providing information to them."
+    ],
+  },
+  {
+    title: "14. Changes to this policy",
+    paragraphs: [
+      "We may update this policy as our services, processing activities, or legal obligations change. The effective date below indicates when this version was published. Where a change is material, we may provide additional notice where appropriate or required by law."
+    ],
+  },
+];
 
 export default function PrivacyPage() {
   return (
     <main className="min-h-screen bg-[#14110D] text-[#81786B] selection:bg-[#C97C3E]/30 selection:text-[#ECE4D8]">
-      {/* =========================================================
-          HEADER
-      ========================================================= */}
-
-      <header className="border-b border-[#252019]">
-        <div className="mx-auto flex h-[72px] max-w-[1200px] items-center justify-between px-5 sm:px-8 lg:px-10">
-          <Link
-            href="/"
-            aria-label="PRETHIM home"
-            className="text-sm font-semibold tracking-[-0.02em] text-[#ECE4D8] outline-none transition-colors hover:text-[#C97C3E] focus-visible:text-[#C97C3E]"
-          >
+      <header className="border-b border-[#29231C]">
+        <div className="mx-auto flex h-16 max-w-4xl items-center justify-between px-5 sm:px-8">
+          <Link href="/" className="text-sm font-semibold tracking-tight text-[#ECE4D8] hover:text-[#C97C3E]">
             PRETHIM
           </Link>
-
-          <nav
-            aria-label="Privacy navigation"
-            className="flex items-center gap-5 sm:gap-8"
-          >
-            <Link
-              href="/docs"
-              className="text-[13px] text-[#746C60] outline-none transition-colors hover:text-[#ECE4D8] focus-visible:text-[#ECE4D8]"
-            >
-              Docs
-            </Link>
-
-            <Link
-              href="/security"
-              className="text-[13px] text-[#746C60] outline-none transition-colors hover:text-[#ECE4D8] focus-visible:text-[#ECE4D8]"
-            >
-              Security
-            </Link>
-
-            <Link
-              href="/terms"
-              className="text-[13px] text-[#746C60] outline-none transition-colors hover:text-[#ECE4D8] focus-visible:text-[#ECE4D8]"
-            >
-              Terms
-            </Link>
+          <nav aria-label="Legal navigation" className="flex gap-5 text-sm">
+            <Link href="/privacy" aria-current="page" className="text-[#ECE4D8]">Privacy</Link>
+            <Link href="/terms" className="hover:text-[#ECE4D8]">Terms</Link>
           </nav>
         </div>
       </header>
 
-      {/* =========================================================
-          CONTENT
-      ========================================================= */}
-
-      <article className="mx-auto max-w-[900px] px-5 py-20 sm:px-8 sm:py-28 lg:px-10 lg:py-32">
-        <div className="border-b border-[#29231C] pb-12">
-          <p className="text-[10px] font-semibold tracking-[0.18em] text-[#C97C3E]">
-            LEGAL / PRIVACY
+      <article className="mx-auto max-w-3xl px-5 py-12 sm:px-8 sm:py-16">
+        <div className="border-b border-[#29231C] pb-8">
+          <p className="text-xs text-[#C97C3E]">PRETHIM / LEGAL</p>
+          <h1 className="mt-4 text-3xl font-semibold tracking-tight text-[#ECE4D8] sm:text-4xl">Privacy Policy</h1>
+          <p className="mt-4 text-sm leading-7">
+            This policy explains how PRETHIM handles personal information across its website, software, APIs, and services.
           </p>
-
-          <h1 className="mt-5 text-5xl font-semibold leading-[0.98] tracking-[-0.05em] text-[#ECE4D8] sm:text-6xl">
-            Privacy Policy
-          </h1>
-
-          <p className="mt-7 max-w-[650px] text-base leading-[1.8] text-[#7D756A]">
-            This Privacy Policy explains how PRETHIM handles information
-            collected through its websites, applications, services, and
-            REDEN decision infrastructure.
-          </p>
-
-          <p className="mt-6 text-xs text-[#575046]">
-            Effective date: September 5, 2026
-          </p>
+          <p className="mt-4 text-xs text-[#81786B]">Effective date: 27 October 2026</p>
         </div>
 
         <div className="divide-y divide-[#29231C]">
-          {/* =======================================================
-              01
-          ======================================================= */}
-
-          <section className="py-12">
-            <p className="text-[10px] font-semibold tracking-[0.16em] text-[#C97C3E]">
-              01 / SCOPE
-            </p>
-
-            <h2 className="mt-4 text-2xl font-medium tracking-[-0.03em] text-[#ECE4D8]">
-              About this policy
-            </h2>
-
-            <div className="mt-6 space-y-4 text-sm leading-[1.85] text-[#7D756A]">
-              <p>
-                This Privacy Policy applies to PRETHIM and the services
-                operated by PRETHIM, including REDEN, its adaptive decision
-                infrastructure.
-              </p>
-
-              <p>
-                It describes what information may be collected, why it is
-                processed, how it is protected, and the choices available to
-                individuals whose information we process.
-              </p>
-
-              <p>
-                Where PRETHIM processes information on behalf of a merchant or
-                other customer, that customer may determine the purposes and
-                means of certain processing. In those circumstances, the
-                customer may have additional responsibilities toward the
-                individuals whose information it provides to the service.
-              </p>
-            </div>
-          </section>
-
-          {/* =======================================================
-              02
-          ======================================================= */}
-
-          <section className="py-12">
-            <p className="text-[10px] font-semibold tracking-[0.16em] text-[#C97C3E]">
-              02 / INFORMATION
-            </p>
-
-            <h2 className="mt-4 text-2xl font-medium tracking-[-0.03em] text-[#ECE4D8]">
-              Information we may process
-            </h2>
-
-            <div className="mt-6 space-y-6 text-sm leading-[1.85] text-[#7D756A]">
-              <div>
-                <h3 className="font-medium text-[#ECE4D8]">
-                  Account and contact information
-                </h3>
-
-                <p className="mt-2">
-                  Depending on how you use PRETHIM, this may include your name,
-                  email address, organization details, account identifiers, and
-                  information necessary to authenticate and manage your
-                  account.
-                </p>
+          {sections.map((section) => (
+            <section key={section.title} className="py-7">
+              <h2 className="text-lg font-semibold text-[#ECE4D8]">{section.title}</h2>
+              <div className="mt-3 space-y-3 text-sm leading-7">
+                {section.paragraphs.map((paragraph) => <p key={paragraph}>{paragraph}</p>)}
+                {section.items && (
+                  <ul className="list-disc space-y-2 pl-5">
+                    {section.items.map(([label, detail]) => (
+                      <li key={label}><strong className="font-medium text-[#ECE4D8]">{label}:</strong> {detail}</li>
+                    ))}
+                  </ul>
+                )}
               </div>
-
-              <div>
-                <h3 className="font-medium text-[#ECE4D8]">
-                  Integration information
-                </h3>
-
-                <p className="mt-2">
-                  When a customer integrates REDEN, we may process information
-                  required to establish and maintain the integration, such as
-                  site identifiers, public integration credentials, connection
-                  status, configuration information, and related operational
-                  records.
-                </p>
-              </div>
-
-              <div>
-                <h3 className="font-medium text-[#ECE4D8]">
-                  Storefront and behavioral signals
-                </h3>
-
-                <p className="mt-2">
-                  REDEN may receive events and behavioral signals from an
-                  integrated application or storefront. Depending on the
-                  customer&apos;s implementation, these signals may include
-                  interactions such as page activity, product interactions,
-                  cart activity, purchase events, and other events configured
-                  by the customer.
-                </p>
-              </div>
-
-              <div>
-                <h3 className="font-medium text-[#ECE4D8]">
-                  Technical and security information
-                </h3>
-
-                <p className="mt-2">
-                  We may process information such as IP addresses, browser and
-                  device characteristics, request metadata, timestamps, logs,
-                  authentication events, and other information required to
-                  operate, secure, troubleshoot, and improve the services.
-                </p>
-              </div>
-            </div>
-          </section>
-
-          {/* =======================================================
-              03
-          ======================================================= */}
-
-          <section className="py-12">
-            <p className="text-[10px] font-semibold tracking-[0.16em] text-[#C97C3E]">
-              03 / USE
-            </p>
-
-            <h2 className="mt-4 text-2xl font-medium tracking-[-0.03em] text-[#ECE4D8]">
-              How we use information
-            </h2>
-
-            <div className="mt-6 space-y-4 text-sm leading-[1.85] text-[#7D756A]">
-              <p>We may use information to:</p>
-
-              <ul className="list-disc space-y-3 pl-5 marker:text-[#C97C3E]">
-                <li>provide and operate PRETHIM and REDEN;</li>
-                <li>authenticate users and integrations;</li>
-                <li>evaluate signals and generate configured decisions;</li>
-                <li>maintain tenant and connection boundaries;</li>
-                <li>monitor system performance and reliability;</li>
-                <li>detect, investigate, and prevent abuse or security incidents;</li>
-                <li>provide support and communicate about the services;</li>
-                <li>maintain operational and audit records;</li>
-                <li>comply with applicable legal obligations; and</li>
-                <li>improve the reliability and functionality of our services.</li>
-              </ul>
-
-              <p>
-                We do not sell personal information to third parties.
-              </p>
-            </div>
-          </section>
-
-          {/* =======================================================
-              04
-          ======================================================= */}
-
-          <section className="py-12">
-            <p className="text-[10px] font-semibold tracking-[0.16em] text-[#C97C3E]">
-              04 / REDEN
-            </p>
-
-            <h2 className="mt-4 text-2xl font-medium tracking-[-0.03em] text-[#ECE4D8]">
-              REDEN and decision processing
-            </h2>
-
-            <div className="mt-6 space-y-4 text-sm leading-[1.85] text-[#7D756A]">
-              <p>
-                REDEN is designed to evaluate application and storefront
-                signals in context and determine configured actions.
-              </p>
-
-              <p>
-                Depending on the integration, information may move through
-                stages such as signal collection, contextual evaluation,
-                decision selection, action execution, and outcome recording.
-              </p>
-
-              <p>
-                Customers are responsible for configuring their integrations
-                appropriately and for ensuring that their use of REDEN is
-                consistent with applicable privacy and data-protection
-                requirements.
-              </p>
-            </div>
-          </section>
-
-          {/* =======================================================
-              05
-          ======================================================= */}
-
-          <section className="py-12">
-            <p className="text-[10px] font-semibold tracking-[0.16em] text-[#C97C3E]">
-              05 / DISCLOSURE
-            </p>
-
-            <h2 className="mt-4 text-2xl font-medium tracking-[-0.03em] text-[#ECE4D8]">
-              When information may be shared
-            </h2>
-
-            <div className="mt-6 space-y-4 text-sm leading-[1.85] text-[#7D756A]">
-              <p>
-                We may share information with service providers that help us
-                operate PRETHIM, such as infrastructure, hosting,
-                authentication, communications, monitoring, analytics, and
-                security providers.
-              </p>
-
-              <p>
-                Such providers receive information only as reasonably
-                necessary to perform services for us or as otherwise permitted
-                by applicable law.
-              </p>
-
-              <p>
-                We may also disclose information where required to comply with
-                applicable law, legal process, regulatory requirements, or to
-                protect the rights, safety, security, and integrity of PRETHIM,
-                our customers, users, or the public.
-              </p>
-            </div>
-          </section>
-
-          {/* =======================================================
-              06
-          ======================================================= */}
-
-          <section className="py-12">
-            <p className="text-[10px] font-semibold tracking-[0.16em] text-[#C97C3E]">
-              06 / SECURITY
-            </p>
-
-            <h2 className="mt-4 text-2xl font-medium tracking-[-0.03em] text-[#ECE4D8]">
-              Security
-            </h2>
-
-            <div className="mt-6 space-y-4 text-sm leading-[1.85] text-[#7D756A]">
-              <p>
-                We use technical and organizational measures designed to
-                protect information against unauthorized access, alteration,
-                disclosure, loss, or destruction.
-              </p>
-
-              <p>
-                These measures may include access controls, authentication,
-                tenant-specific authorization, encrypted communications,
-                monitoring, logging, rate limiting, and operational controls
-                appropriate to the services we provide.
-              </p>
-
-              <p>
-                No internet-based service can guarantee absolute security.
-                We therefore continuously assess and improve our security
-                practices as the platform evolves.
-              </p>
-
-              <p>
-                Additional information is available on our{" "}
-                <Link
-                  href="/security"
-                  className="text-[#ECE4D8] underline decoration-[#C97C3E]/50 underline-offset-4 transition-colors hover:text-[#C97C3E]"
-                >
-                  Security page
-                </Link>
-                .
-              </p>
-            </div>
-          </section>
-
-          {/* =======================================================
-              07
-          ======================================================= */}
-
-          <section className="py-12">
-            <p className="text-[10px] font-semibold tracking-[0.16em] text-[#C97C3E]">
-              07 / RETENTION
-            </p>
-
-            <h2 className="mt-4 text-2xl font-medium tracking-[-0.03em] text-[#ECE4D8]">
-              Data retention
-            </h2>
-
-            <div className="mt-6 space-y-4 text-sm leading-[1.85] text-[#7D756A]">
-              <p>
-                We retain information only for as long as reasonably necessary
-                for the purposes described in this policy, including providing
-                the services, maintaining security, resolving disputes,
-                enforcing agreements, and satisfying legal or regulatory
-                obligations.
-              </p>
-
-              <p>
-                Retention periods may vary depending on the type of information
-                and the purpose for which it was collected.
-              </p>
-
-              <p>
-                When information is no longer required, it may be deleted,
-                anonymized, or otherwise disposed of in accordance with our
-                operational and legal requirements.
-              </p>
-            </div>
-          </section>
-
-          {/* =======================================================
-              08
-          ======================================================= */}
-
-          <section className="py-12">
-            <p className="text-[10px] font-semibold tracking-[0.16em] text-[#C97C3E]">
-              08 / RIGHTS
-            </p>
-
-            <h2 className="mt-4 text-2xl font-medium tracking-[-0.03em] text-[#ECE4D8]">
-              Your privacy rights
-            </h2>
-
-            <div className="mt-6 space-y-4 text-sm leading-[1.85] text-[#7D756A]">
-              <p>
-                Depending on applicable law and the circumstances of the
-                processing, individuals may have rights relating to their
-                personal information, including rights to:
-              </p>
-
-              <ul className="list-disc space-y-3 pl-5 marker:text-[#C97C3E]">
-                <li>receive information about how their data is processed;</li>
-                <li>request access to personal information;</li>
-                <li>request correction of inaccurate information;</li>
-                <li>request deletion where applicable;</li>
-                <li>object to or restrict certain processing;</li>
-                <li>request portability where applicable; and</li>
-                <li>withdraw consent where processing relies on consent.</li>
-              </ul>
-
-              <p>
-                Where PRETHIM processes information on behalf of a customer,
-                requests may need to be directed to that customer first.
-                PRETHIM will assist the customer where appropriate and
-                permitted by applicable law.
-              </p>
-            </div>
-          </section>
-
-          {/* =======================================================
-              09
-          ======================================================= */}
-
-          <section className="py-12">
-            <p className="text-[10px] font-semibold tracking-[0.16em] text-[#C97C3E]">
-              09 / COOKIES
-            </p>
-
-            <h2 className="mt-4 text-2xl font-medium tracking-[-0.03em] text-[#ECE4D8]">
-              Cookies and similar technologies
-            </h2>
-
-            <div className="mt-6 space-y-4 text-sm leading-[1.85] text-[#7D756A]">
-              <p>
-                PRETHIM may use cookies and similar technologies where
-                necessary to operate websites and applications, maintain
-                sessions, remember preferences, understand usage, and protect
-                against abuse.
-              </p>
-
-              <p>
-                The specific technologies used may vary between PRETHIM
-                products and services.
-              </p>
-
-              <p>
-                See our{" "}
-                <Link
-                  href="/cookies"
-                  className="text-[#ECE4D8] underline decoration-[#C97C3E]/50 underline-offset-4 transition-colors hover:text-[#C97C3E]"
-                >
-                  Cookie Policy
-                </Link>{" "}
-                for more information.
-              </p>
-            </div>
-          </section>
-
-          {/* =======================================================
-              10
-          ======================================================= */}
-
-          <section className="py-12">
-            <p className="text-[10px] font-semibold tracking-[0.16em] text-[#C97C3E]">
-              10 / INTERNATIONAL PROCESSING
-            </p>
-
-            <h2 className="mt-4 text-2xl font-medium tracking-[-0.03em] text-[#ECE4D8]">
-              Data transfers
-            </h2>
-
-            <div className="mt-6 space-y-4 text-sm leading-[1.85] text-[#7D756A]">
-              <p>
-                PRETHIM and its service providers may process information in
-                countries other than the country in which an individual is
-                located.
-              </p>
-
-              <p>
-                Where cross-border processing occurs, we seek to apply
-                appropriate safeguards and comply with applicable
-                data-protection requirements.
-              </p>
-            </div>
-          </section>
-
-          {/* =======================================================
-              11
-          ======================================================= */}
-
-          <section className="py-12">
-            <p className="text-[10px] font-semibold tracking-[0.16em] text-[#C97C3E]">
-              11 / CHILDREN
-            </p>
-
-            <h2 className="mt-4 text-2xl font-medium tracking-[-0.03em] text-[#ECE4D8]">
-              Children&apos;s information
-            </h2>
-
-            <div className="mt-6 space-y-4 text-sm leading-[1.85] text-[#7D756A]">
-              <p>
-                PRETHIM is intended for businesses, developers, and
-                organizations. Our services are not directed toward children
-                and we do not knowingly seek to collect personal information
-                directly from children through our services.
-              </p>
-
-              <p>
-                If you believe that a child&apos;s information has been
-                provided to us improperly, please contact us so that the
-                matter can be reviewed.
-              </p>
-            </div>
-          </section>
-
-          {/* =======================================================
-              12
-          ======================================================= */}
-
-          <section className="py-12">
-            <p className="text-[10px] font-semibold tracking-[0.16em] text-[#C97C3E]">
-              12 / CHANGES
-            </p>
-
-            <h2 className="mt-4 text-2xl font-medium tracking-[-0.03em] text-[#ECE4D8]">
-              Changes to this policy
-            </h2>
-
-            <div className="mt-6 space-y-4 text-sm leading-[1.85] text-[#7D756A]">
-              <p>
-                We may update this Privacy Policy as our services, practices,
-                or legal obligations change.
-              </p>
-
-              <p>
-                When we make material changes, we will update the effective
-                date and may provide additional notice where appropriate.
-              </p>
-            </div>
-          </section>
-
-          {/* =======================================================
-              13
-          ======================================================= */}
-
-          <section className="py-12">
-            <p className="text-[10px] font-semibold tracking-[0.16em] text-[#C97C3E]">
-              13 / CONTACT
-            </p>
-
-            <h2 className="mt-4 text-2xl font-medium tracking-[-0.03em] text-[#ECE4D8]">
-              Privacy requests
-            </h2>
-
-            <div className="mt-6 space-y-4 text-sm leading-[1.85] text-[#7D756A]">
-              <p>
-                If you have a privacy question or want to exercise an
-                applicable data-protection right, contact PRETHIM through the
-                official support or privacy contact associated with your
-                account or service.
-              </p>
-
-              <p>
-                Requests may require sufficient information to verify the
-                requester&apos;s identity and protect against unauthorized
-                disclosure.
-              </p>
-            </div>
-          </section>
+            </section>
+          ))}
         </div>
 
-        {/* =========================================================
-            FOOTER NAV
-        ========================================================= */}
-
-        <div className="mt-12 flex flex-wrap gap-x-7 gap-y-3 border-t border-[#29231C] pt-8 text-xs text-[#575046]">
-          <Link
-            href="/docs"
-            className="transition-colors hover:text-[#ECE4D8]"
-          >
-            Documentation
-          </Link>
-
-          <Link
-            href="/security"
-            className="transition-colors hover:text-[#ECE4D8]"
-          >
-            Security
-          </Link>
-
-          <Link
-            href="/cookies"
-            className="transition-colors hover:text-[#ECE4D8]"
-          >
-            Cookies
-          </Link>
-
-          <Link
-            href="/terms"
-            className="transition-colors hover:text-[#ECE4D8]"
-          >
-            Terms
-          </Link>
-
-          <Link
-            href="/"
-            className="transition-colors hover:text-[#ECE4D8]"
-          >
-            PRETHIM
-          </Link>
-        </div>
+        <footer className="border-t border-[#29231C] pt-6 text-sm">
+          <p>
+            For privacy questions or requests, use the contact channel provided with the PRETHIM service you use. If your request concerns information handled for a business using a PRETHIM product, contact that business first where appropriate.
+          </p>
+          <div className="mt-4 flex gap-5 text-xs">
+            <Link href="/" className="hover:text-[#ECE4D8]">PRETHIM</Link>
+            <Link href="/terms" className="hover:text-[#ECE4D8]">Terms of Service</Link>
+          </div>
+        </footer>
       </article>
     </main>
   );
