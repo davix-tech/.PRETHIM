@@ -41,13 +41,6 @@ type Message = {
   content: string;
 };
 
-type Conversation = {
-  id: number;
-  title: string;
-  preview: string;
-  date: string;
-};
-
 type IntelligenceResponse = {
   ok?: boolean;
   answer?: string;
@@ -114,8 +107,6 @@ const SUGGESTIONS = [
   "What should I pay attention to?",
 ];
 
-const INITIAL_CONVERSATIONS: Conversation[] = [];
-
 /* =========================================================
    FORMATTING HELPERS
 ========================================================= */
@@ -140,10 +131,6 @@ export default function RedenDashboardPage() {
   const [input, setInput] = useState("");
   const [messages, setMessages] = useState<Message[]>([]);
   const [isThinking, setIsThinking] = useState(false);
-
-  const [conversations, setConversations] = useState<Conversation[]>(
-    INITIAL_CONVERSATIONS
-  );
 
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
@@ -301,18 +288,6 @@ export default function RedenDashboardPage() {
         },
       ]);
 
-      setConversations((current) => [
-        {
-          id: Date.now(),
-          title:
-            question.length > 38
-              ? `${question.slice(0, 38)}...`
-              : question,
-          preview: question,
-          date: "Just now",
-        },
-        ...current,
-      ]);
     } catch (error) {
       const message =
         error instanceof Error
@@ -587,7 +562,6 @@ export default function RedenDashboardPage() {
             messages={messages}
             isThinking={isThinking}
             hasConversation={hasConversation}
-            conversations={conversations}
             onSubmit={handleSubmit}
             onSuggestion={askQuestion}
           />
@@ -928,7 +902,6 @@ function Intelligence({
   messages,
   isThinking,
   hasConversation,
-  conversations,
   onSubmit,
   onSuggestion,
 }: {
@@ -937,7 +910,6 @@ function Intelligence({
   messages: Message[];
   isThinking: boolean;
   hasConversation: boolean;
-  conversations: Conversation[];
   onSubmit: (event: FormEvent<HTMLFormElement>) => void;
   onSuggestion: (question: string) => void;
 }) {
@@ -948,7 +920,6 @@ function Intelligence({
           <div className="text-[9px] uppercase tracking-[0.16em] text-white/25">REDEN / Intelligence</div>
           <div className="mt-1 text-[12px] text-white/55">Business analysis, grounded in your store data</div>
         </div>
-        {hasConversation && <button type="button" onClick={() => onSuggestion("Give me a fresh overview of my store using only the available evidence.")} className="rounded-xl border border-white/[0.07] px-3 py-2 text-[10px] text-white/40 transition hover:bg-white/[0.04] hover:text-white/70">New analysis</button>}
       </div>
 
       {!hasConversation ? (
@@ -960,7 +931,6 @@ function Intelligence({
             <div className="mt-7 flex flex-wrap gap-2">
               {SUGGESTIONS.map((suggestion) => <button key={suggestion} type="button" onClick={() => onSuggestion(suggestion)} className="rounded-full border border-white/[0.08] bg-white/[0.025] px-3.5 py-2.5 text-left text-[10px] text-white/50 transition hover:border-[#C97C3E]/30 hover:bg-[#C97C3E]/[0.05] hover:text-white/80">{suggestion}</button>)}
             </div>
-            {conversations.length > 0 && <div className="mt-6 text-[9px] text-white/20">{conversations.length} prompt{conversations.length === 1 ? "" : "s"} asked in this session</div>}
           </div>
         </div>
       ) : (
