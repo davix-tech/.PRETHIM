@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import Image from "next/image";
 import {
   FormEvent,
@@ -114,20 +115,7 @@ const SUGGESTIONS = [
   "What should I pay attention to?",
 ];
 
-const INITIAL_CONVERSATIONS: Conversation[] = [
-  {
-    id: 1,
-    title: "Today's business activity",
-    preview: "What happened today?",
-    date: "Today",
-  },
-  {
-    id: 2,
-    title: "Revenue performance",
-    preview: "How much did I earn today?",
-    date: "Yesterday",
-  },
-];
+const INITIAL_CONVERSATIONS: Conversation[] = [];
 
 /* =========================================================
    FORMATTING HELPERS
@@ -174,7 +162,7 @@ export default function RedenDashboardPage() {
 
   const [metrics, setMetrics] = useState<Metrics | null>(null);
   const [metricsLoading, setMetricsLoading] = useState(true);
-  const [, setMetricsError] = useState<string | null>(null);
+  const [metricsError, setMetricsError] = useState<string | null>(null);
   const [, setMetricsUpdatedAt] = useState<string | null>(null);
 
   const fetchMetrics = useCallback(async (resolvedSiteId: string) => {
@@ -456,7 +444,7 @@ export default function RedenDashboardPage() {
               </span>
 
               <span className="text-[9px] font-medium uppercase tracking-[0.1em] text-white/35">
-                Connected
+                Workspace
               </span>
             </div>
 
@@ -587,6 +575,7 @@ export default function RedenDashboardPage() {
             onOpenIntelligence={() => navigate("intelligence")}
             metrics={metrics}
             metricsLoading={metricsLoading}
+            metricsError={metricsError}
           />
         )}
 
@@ -684,35 +673,37 @@ function Overview({
   onOpenIntelligence,
   metrics,
   metricsLoading,
+  metricsError,
 }: {
   onAsk: (question: string) => void;
   onOpenIntelligence: () => void;
   metrics: Metrics | null;
   metricsLoading: boolean;
+  metricsError: string | null;
 }) {
   const revenueValue = metricsLoading
     ? "—"
-    : metrics
-    ? formatNaira(metrics.revenue)
-    : "₦0";
+    : metricsError || !metrics
+    ? "Unavailable"
+    : formatNaira(metrics.revenue);
 
   const visitorsValue = metricsLoading
     ? "—"
-    : metrics
-    ? formatCount(metrics.visitors)
-    : "0";
+    : metricsError || !metrics
+    ? "—"
+    : formatCount(metrics.visitors);
 
   const checkoutsValue = metricsLoading
     ? "—"
-    : metrics
-    ? formatCount(metrics.checkouts)
-    : "0";
+    : metricsError || !metrics
+    ? "—"
+    : formatCount(metrics.checkouts);
 
   const purchasesValue = metricsLoading
     ? "—"
-    : metrics
-    ? formatCount(metrics.purchases)
-    : "0";
+    : metricsError || !metrics
+    ? "—"
+    : formatCount(metrics.purchases);
 
   return (
     <div className="mx-auto w-full max-w-[1180px] px-5 pb-28 pt-8 md:px-8 md:pt-10 lg:pb-16">
@@ -799,192 +790,25 @@ function Overview({
         />
       </div>
 
-      {/* PERFORMANCE + SIGNAL */}
-
-      <div className="mt-4 grid gap-4 lg:grid-cols-[1.5fr_0.8fr]">
-        <section className="overflow-hidden rounded-3xl border border-white/[0.07] bg-white/[0.018]">
-          <div className="flex items-start justify-between p-5 md:p-6">
-            <div>
-              <div className="text-[13px] font-medium text-white/75">
-                Business performance
-              </div>
-
-              <div className="mt-1 text-[11px] text-white/25">
-                Revenue activity over the selected period
-              </div>
-            </div>
-
-            <div className="rounded-lg border border-white/[0.06] bg-white/[0.025] px-2.5 py-1.5 text-[9px] uppercase tracking-[0.12em] text-white/30">
-              Today
-            </div>
-          </div>
-
-          <div className="relative mx-5 mb-5 h-[230px] overflow-hidden rounded-2xl border border-white/[0.045] bg-[#090909] md:mx-6 md:mb-6">
-            <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.025)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.025)_1px,transparent_1px)] bg-[size:44px_44px]" />
-
-            <div className="absolute inset-x-0 bottom-9 h-px bg-white/[0.05]" />
-
-            <div className="absolute left-5 top-5 flex items-center gap-2">
-              <div
-                className="h-1.5 w-1.5 rounded-full shadow-[0_0_8px_rgba(201,124,62,0.7)]"
-                style={{ background: COPPER }}
-              />
-
-              <span className="text-[9px] uppercase tracking-[0.12em] text-white/25">
-                Revenue
-              </span>
-            </div>
-
-            <div className="absolute inset-x-8 bottom-10 h-[120px]">
-              <svg
-                viewBox="0 0 800 120"
-                preserveAspectRatio="none"
-                className="h-full w-full"
-              >
-                <defs>
-                  <linearGradient
-                    id="revenueGradient"
-                    x1="0"
-                    x2="1"
-                    y1="0"
-                    y2="0"
-                  >
-                    <stop
-                      offset="0%"
-                      stopColor={COPPER}
-                      stopOpacity="0.2"
-                    />
-                    <stop
-                      offset="100%"
-                      stopColor={COPPER}
-                      stopOpacity="0.9"
-                    />
-                  </linearGradient>
-                </defs>
-
-                <path
-                  d="M0 110 C80 110 100 105 160 105 C220 105 250 100 300 100 C360 100 400 106 450 92 C510 76 520 86 580 75 C650 62 690 67 800 38"
-                  fill="none"
-                  stroke="url(#revenueGradient)"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                />
-              </svg>
-            </div>
-
-            <div className="absolute bottom-3 left-4 text-[8px] text-white/15">
-              00:00
-            </div>
-
-            <div className="absolute bottom-3 right-4 text-[8px] text-white/15">
-              NOW
-            </div>
-          </div>
-        </section>
-
-        <section className="relative overflow-hidden rounded-3xl border border-[#C97C3E]/[0.14] bg-[#C97C3E]/[0.025] p-6">
-          <div
-            className="absolute right-[-60px] top-[-60px] h-[180px] w-[180px] rounded-full blur-[70px]"
-            style={{ background: `${COPPER}0D` }}
-          />
-
-          <div className="relative">
-            <div className="flex items-center gap-2">
-              <div className="flex h-8 w-8 items-center justify-center rounded-xl border border-[#C97C3E]/[0.14] bg-[#C97C3E]/[0.07]">
-                <Sparkles
-                  size={14}
-                  style={{ color: COPPER }}
-                />
-              </div>
-
-              <div>
-                <div className="text-[12px] font-medium text-white/75">
-                  REDEN signal
-                </div>
-
-                <div className="text-[9px] text-white/25">
-                  Latest observation
-                </div>
-              </div>
-            </div>
-
-            <div className="mt-12">
-              <div className="text-[26px] font-semibold leading-[1.05] tracking-[-0.05em] text-white/90">
-                No active
-                <br />
-                signals yet.
-              </div>
-
-              <p className="mt-4 text-[11px] leading-5 text-white/30">
-                REDEN will surface meaningful changes once enough business
-                activity exists to evaluate.
-              </p>
-            </div>
-
-            <button
-              type="button"
-              onClick={() =>
-                onAsk("What should I pay attention to?")
-              }
-              className="group mt-8 flex items-center gap-2 text-[10px] font-medium"
-              style={{ color: COPPER }}
-            >
-              Ask what matters
-
-              <ArrowUpRight
-                size={13}
-                className="transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5"
-              />
-            </button>
-          </div>
-        </section>
-      </div>
-
-      {/* RECENT DECISIONS */}
-
-      <section className="mt-4 rounded-3xl border border-white/[0.07] bg-white/[0.018] p-5 md:p-6">
-        <div className="flex items-end justify-between">
-          <div>
-            <div className="mb-2 text-[10px] uppercase tracking-[0.16em] text-white/20">
-              02 / Activity
-            </div>
-
-            <div className="text-[15px] font-medium text-white/75">
-              Recent decisions
-            </div>
-
-            <div className="mt-1 text-[11px] text-white/25">
-              Actions REDEN has evaluated for your business.
-            </div>
-          </div>
-
-          <span className="hidden text-[10px] text-white/20 sm:block">
-            Latest
-          </span>
+      {/* REVENUE INTELLIGENCE */}
+      <section className="mt-4 grid gap-4 lg:grid-cols-[1.2fr_0.8fr]">
+        <div className="rounded-2xl border border-white/[0.07] bg-white/[0.018] p-5 md:p-6">
+          <div className="text-[10px] uppercase tracking-[0.14em] text-white/30">Revenue intelligence</div>
+          <h2 className="mt-4 text-xl font-medium tracking-[-0.035em] text-white/80">{metricsLoading ? "Reading your store data…" : metricsError || !metrics ? "Business data is unavailable." : metrics.visitors === 0 && metrics.purchases === 0 ? "REDEN is waiting for meaningful activity." : "Your latest store metrics are ready to examine."}</h2>
+          <p className="mt-3 max-w-xl text-[12px] leading-6 text-white/35">{metricsError ? "REDEN could not retrieve the current metrics. Check the store connection; unavailable data is not reported as zero." : !metrics && !metricsLoading ? "Connect a storefront and send events to make revenue intelligence available here." : "Ask REDEN to explain the figures and identify changes worth investigating. Answers should stay within what the available evidence supports."}</p>
+          <button type="button" onClick={() => onAsk("Give me an evidence-based overview of my store performance and explain what deserves attention.")} className="mt-5 inline-flex items-center gap-2 text-[11px] font-medium text-[#C97C3E] transition hover:text-[#DFA16E]">Examine the evidence <ArrowUpRight size={13} /></button>
         </div>
-
-        <div className="mt-6 grid gap-2.5 md:grid-cols-3">
-          <DecisionItem
-            number="01"
-            title="No intervention"
-            description="Traffic is being monitored."
-            status="Monitoring"
-          />
-
-          <DecisionItem
-            number="02"
-            title="Checkout recovery"
-            description="No recovery action triggered."
-            status="Suppressed"
-          />
-
-          <DecisionItem
-            number="03"
-            title="Offer evaluation"
-            description="Waiting for sufficient evidence."
-            status="Learning"
-          />
+        <div className="rounded-2xl border border-white/[0.07] bg-white/[0.018] p-5 md:p-6">
+          <div className="text-[10px] uppercase tracking-[0.14em] text-white/30">Signal status</div>
+          <div className="mt-4 text-lg font-medium tracking-[-0.03em] text-white/75">{metricsLoading ? "Checking available evidence" : metricsError || !metrics ? "Unable to verify signals" : "No verified signal summary"}</div>
+          <p className="mt-3 text-[12px] leading-6 text-white/35">This dashboard currently receives aggregate metrics, not a live signal feed. REDEN will not invent a signal or claim that no signals exist when that feed is unavailable.</p>
         </div>
+      </section>
+
+      {/* DECISION HISTORY */}
+      <section className="mt-4 rounded-2xl border border-white/[0.07] bg-white/[0.018] p-5 md:p-6">
+        <div className="flex flex-wrap items-end justify-between gap-3"><div><div className="text-[10px] uppercase tracking-[0.14em] text-white/30">Decision history</div><h2 className="mt-2 text-[15px] font-medium text-white/75">What REDEN decided</h2></div><span className="text-[10px] text-white/25">Live records required</span></div>
+        <p className="mt-4 max-w-2xl text-[12px] leading-6 text-white/35">Decision records are not yet available through this dashboard view. No sample actions or invented statuses are shown here.</p>
       </section>
     </div>
   );
@@ -1084,109 +908,8 @@ function DecisionItem({
 function Decisions() {
   return (
     <div className="mx-auto w-full max-w-[1080px] px-5 pb-28 pt-8 md:px-8 md:pt-10 lg:pb-16">
-      <div className="mb-12">
-        <div className="mb-5 text-[10px] uppercase tracking-[0.18em] text-white/25">
-          02 / Decisions
-        </div>
-
-        <div className="flex flex-col justify-between gap-6 lg:flex-row lg:items-end">
-          <div>
-            <h1 className="text-[40px] font-semibold leading-[0.95] tracking-[-0.06em] md:text-[55px]">
-              What REDEN
-              <br />
-              <span className="text-white/30">
-                is doing.
-              </span>
-            </h1>
-
-            <p className="mt-5 max-w-xl text-[13px] leading-6 text-white/35">
-              REDEN evaluates signals before deciding whether intervention is
-              useful. Doing nothing is also a decision.
-            </p>
-          </div>
-
-          <div className="flex items-center gap-2 text-[10px] text-white/25">
-            <div
-              className="h-1.5 w-1.5 rounded-full"
-              style={{ background: COPPER }}
-            />
-            Evaluation engine active
-          </div>
-        </div>
-      </div>
-
-      <div className="space-y-3">
-        <DecisionRow
-          number="01"
-          icon={Zap}
-          title="Checkout recovery"
-          status="Suppressed"
-          description="No intervention triggered. Current evidence does not justify action."
-        />
-
-        <DecisionRow
-          number="02"
-          icon={TrendingUp}
-          title="Purchase intent"
-          status="Monitoring"
-          description="REDEN is continuing to observe visitor behaviour before taking action."
-        />
-
-        <DecisionRow
-          number="03"
-          icon={CircleDollarSign}
-          title="Offer optimisation"
-          status="Learning"
-          description="Not enough evidence is available to safely change the current offer."
-        />
-      </div>
-    </div>
-  );
-}
-
-function DecisionRow({
-  number,
-  icon: Icon,
-  title,
-  status,
-  description,
-}: {
-  number: string;
-  icon: typeof Zap;
-  title: string;
-  status: string;
-  description: string;
-}) {
-  return (
-    <div className="group relative overflow-hidden rounded-3xl border border-white/[0.07] bg-white/[0.018] p-5 transition duration-500 hover:border-white/[0.11] hover:bg-white/[0.025] md:p-7">
-      <div className="absolute right-5 top-[-20px] text-[90px] font-semibold leading-none tracking-[-0.08em] text-white/[0.018] transition group-hover:text-[#C97C3E]/[0.035] md:right-8">
-        {number}
-      </div>
-
-      <div className="relative flex gap-5">
-        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-[#C97C3E]/[0.12] bg-[#C97C3E]/[0.05]">
-          <Icon
-            size={16}
-            style={{ color: COPPER }}
-          />
-        </div>
-
-        <div className="min-w-0 flex-1">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <div className="text-[13px] font-medium text-white/75">
-              {title}
-            </div>
-
-            <span className="rounded-full border border-white/[0.07] bg-black/20 px-2.5 py-1 text-[8px] uppercase tracking-[0.08em] text-white/30">
-              {status}
-            </span>
-          </div>
-
-          <p className="mt-2 max-w-2xl text-[11px] leading-5 text-white/30">
-            {description}
-          </p>
-        </div>
-      </div>
+      <div className="mb-10"><div className="mb-4 text-[10px] uppercase tracking-[0.18em] text-white/25">Decisions</div><h1 className="text-[40px] font-semibold leading-[0.98] tracking-[-0.06em] md:text-[55px]">Decisions,<br /><span className="text-white/30">with evidence.</span></h1><p className="mt-5 max-w-xl text-[13px] leading-6 text-white/35">Review what REDEN decided, why it decided, whether an action executed, and what outcome followed.</p></div>
+      <section className="rounded-2xl border border-white/[0.07] bg-white/[0.018] p-6 md:p-8"><div className="text-[13px] font-medium text-white/70">No decision records available</div><p className="mt-2 max-w-xl text-[12px] leading-6 text-white/35">This view is waiting for real decision records from REDEN. Placeholder decisions are intentionally omitted so the dashboard never presents examples as merchant activity.</p></section>
     </div>
   );
 }
@@ -1499,201 +1222,19 @@ function Composer({
 ========================================================= */
 
 function SettingsPage({ storeName }: { storeName: string }) {
-  const [notifications, setNotifications] = useState(true);
-  const [tracking, setTracking] = useState(true);
-  const [emailReports, setEmailReports] = useState(false);
-
   return (
-    <div className="mx-auto w-full max-w-[1050px] px-5 pb-28 pt-8 md:px-8 md:pt-10 lg:pb-16">
-      <div className="mb-12">
-        <div className="mb-5 text-[10px] uppercase tracking-[0.18em] text-white/25">
-          04 / Settings
-        </div>
-
-        <h1 className="text-[40px] font-semibold leading-[0.95] tracking-[-0.06em] md:text-[55px]">
-          Control the
-          <br />
-          <span className="text-white/30">
-            REDEN connection.
-          </span>
-        </h1>
-
-        <p className="mt-5 max-w-xl text-[13px] leading-6 text-white/35">
-          Manage your store connection, intelligence behaviour and account
-          preferences.
-        </p>
+    <div className="mx-auto w-full max-w-[920px] px-5 pb-28 pt-8 md:px-8 md:pt-10 lg:pb-16">
+      <div className="mb-10">
+        <div className="mb-4 text-[10px] uppercase tracking-[0.18em] text-white/25">Settings</div>
+        <h1 className="text-[40px] font-semibold leading-[0.98] tracking-[-0.06em] md:text-[55px]">A clear view of<br /><span className="text-white/30">your connection.</span></h1>
+        <p className="mt-5 max-w-xl text-[13px] leading-6 text-white/35">Only verified connection details are shown here. Persistent monitoring, notification, billing, and account controls will appear when they are connected to real settings.</p>
       </div>
-
-      <div className="grid gap-4 lg:grid-cols-[1fr_0.75fr]">
-        <div className="space-y-4">
-          <SettingsSection
-            number="01"
-            title="Store"
-            description="The storefront currently connected to REDEN."
-          >
-            <SettingsItem
-              icon={Store}
-              title="Store name"
-              description="Your connected business"
-              value={storeName}
-            />
-
-            <SettingsItem
-              icon={Globe2}
-              title="Store domain"
-              description="The domain REDEN is monitoring"
-              value="Connected"
-              valueAccent
-            />
-
-            <SettingsItem
-              icon={Wifi}
-              title="Connection"
-              description="SDK and event connection status"
-              value="Active"
-              valueAccent
-            />
-          </SettingsSection>
-
-          <SettingsSection
-            number="02"
-            title="Intelligence"
-            description="Choose what REDEN is allowed to monitor and surface."
-          >
-            <ToggleSetting
-              icon={Activity}
-              title="Behaviour tracking"
-              description="Allow REDEN to evaluate storefront activity."
-              enabled={tracking}
-              onChange={() => setTracking(!tracking)}
-            />
-
-            <ToggleSetting
-              icon={Bell}
-              title="Business signals"
-              description="Surface meaningful changes in business activity."
-              enabled={notifications}
-              onChange={() => setNotifications(!notifications)}
-            />
-
-            <ToggleSetting
-              icon={BarChart3}
-              title="Email summaries"
-              description="Receive periodic business intelligence summaries."
-              enabled={emailReports}
-              onChange={() => setEmailReports(!emailReports)}
-            />
-          </SettingsSection>
-
-          <SettingsSection
-            number="03"
-            title="Data"
-            description="Understand the data REDEN currently has access to."
-          >
-            <SettingsItem
-              icon={Database}
-              title="Business events"
-              description="Store activity being evaluated"
-              value="Available"
-              valueAccent
-            />
-
-            <SettingsItem
-              icon={ShieldCheck}
-              title="Data protection"
-              description="REDEN keeps merchant credentials private."
-              value="Protected"
-            />
-          </SettingsSection>
-        </div>
-
-        <div className="space-y-4">
-          <div className="relative overflow-hidden rounded-3xl border border-[#C97C3E]/[0.14] bg-[#C97C3E]/[0.035] p-6">
-            <div
-              className="absolute right-[-80px] top-[-80px] h-[220px] w-[220px] rounded-full blur-[80px]"
-              style={{ background: `${COPPER}0F` }}
-            />
-
-            <div className="relative">
-              <div className="flex items-center justify-between">
-                <div className="text-[9px] uppercase tracking-[0.16em] text-[#C97C3E]/60">
-                  Current plan
-                </div>
-
-                <div className="rounded-full border border-[#C97C3E]/[0.15] bg-[#C97C3E]/[0.06] px-2.5 py-1 text-[8px] font-medium text-[#DFA16E]">
-                  FREE
-                </div>
-              </div>
-
-              <div className="mt-8 text-[30px] font-semibold tracking-[-0.06em]">
-                Free
-              </div>
-
-              <p className="mt-2 text-[10px] leading-5 text-white/30">
-                Core REDEN intelligence for getting your store connected and
-                learning from real business activity.
-              </p>
-
-              <div className="mt-7 space-y-2">
-                <PlanFeature text="Store connection" />
-                <PlanFeature text="Revenue intelligence" />
-                <PlanFeature text="Decision evaluation" />
-                <PlanFeature text="REDEN Intelligence" />
-              </div>
-
-              <button
-                type="button"
-                className="mt-7 flex w-full items-center justify-center gap-2 rounded-xl border border-[#C97C3E]/[0.15] bg-[#C97C3E]/[0.07] py-3 text-[10px] font-medium text-[#DFA16E] transition hover:bg-[#C97C3E]/[0.11]"
-              >
-                View plan details
-                <ArrowUpRight size={12} />
-              </button>
-            </div>
-          </div>
-
-          <SettingsSection
-            number="04"
-            title="Account"
-            description="Your REDEN account and access."
-          >
-            <SettingsItem
-              icon={User}
-              title="Account"
-              description="Signed-in merchant account"
-              value={storeName}
-            />
-
-            <SettingsItem
-              icon={CircleDollarSign}
-              title="Billing"
-              description="Plan and payment settings"
-              value="Free"
-            />
-
-            <button
-              type="button"
-              className="flex w-full items-center gap-3 rounded-xl px-2 py-3 text-left transition hover:bg-red-500/[0.035]"
-            >
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-red-500/[0.06]">
-                <LogOut
-                  size={13}
-                  className="text-red-400/70"
-                />
-              </div>
-
-              <div>
-                <div className="text-[10px] font-medium text-red-400/70">
-                  Sign out
-                </div>
-
-                <div className="mt-0.5 text-[8px] text-white/20">
-                  End this REDEN session
-                </div>
-              </div>
-            </button>
-          </SettingsSection>
-        </div>
-      </div>
+      <section className="rounded-2xl border border-white/[0.07] bg-white/[0.018] p-5 md:p-7">
+        <div className="text-[10px] uppercase tracking-[0.14em] text-white/30">Connected storefront</div>
+        <div className="mt-3 text-xl font-medium tracking-[-0.035em] text-white/80">{storeName}</div>
+        <p className="mt-3 max-w-xl text-[12px] leading-6 text-white/35">Store selection and connection diagnostics are handled through the existing storefront connection flow. This screen does not currently save preference changes.</p>
+        <Link href="/reden-addstore" className="mt-5 inline-flex items-center gap-2 text-[11px] font-medium text-[#C97C3E] transition hover:text-[#DFA16E]">Manage storefront connection <ArrowUpRight size={13} /></Link>
+      </section>
     </div>
   );
 }
