@@ -8,8 +8,6 @@ import { createClient } from "../../lib/supabase/client";
 export const dynamic = "force-dynamic";
 
 export default function SignInPage() {
-  const supabase = createClient();
-
   const { status } = useSession();
   const router = useRouter();
 
@@ -57,6 +55,9 @@ export default function SignInPage() {
     setErrorMsg("");
 
     try {
+      // Create the browser client only after user interaction. Client components
+      // are still prerendered during builds, where browser auth env may be absent.
+      const supabase = createClient();
       const { error } = await supabase.auth.signInWithOtp({
         email,
         options: {
