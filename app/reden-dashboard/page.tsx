@@ -58,7 +58,6 @@ type SiteResponse = {
 type Metrics = {
   revenue: number;
   visitors: number;
-  checkouts: number;
   purchases: number;
   conversionRate: number;
 };
@@ -666,12 +665,6 @@ function Overview({
     ? "—"
     : formatCount(metrics.visitors);
 
-  const checkoutsValue = metricsLoading
-    ? "—"
-    : metricsError || !metrics
-    ? "—"
-    : formatCount(metrics.checkouts);
-
   const purchasesValue = metricsLoading
     ? "—"
     : metricsError || !metrics
@@ -733,23 +726,17 @@ function Overview({
 
 
         <MetricCard
-          number="02"
+          number="01"
           label="Visitors"
           value={visitorsValue}
           detail="Today"
           icon={Users}
         />
 
-        <MetricCard
-          number="03"
-          label="Checkouts"
-          value={checkoutsValue}
-          detail="Today"
-          icon={Activity}
-        />
+
 
         <MetricCard
-          number="04"
+          number="02"
           label="Purchases"
           value={purchasesValue}
           detail="Today"
@@ -757,7 +744,7 @@ function Overview({
         />
 
         <MetricCard
-          number="01"
+          number="03"
           label="Revenue"
           value={revenueValue}
           detail="Today"
