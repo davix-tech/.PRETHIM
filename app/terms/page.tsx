@@ -9,7 +9,7 @@ const sections = [
   {
     title: "1. About these terms",
     paragraphs: [
-      "These Terms of Service ("Terms") govern your access to and use of the websites, software, APIs, documentation, and services made available by PRETHIM ("PRETHIM", "we", "us", or "our").",
+      `These Terms of Service ("Terms") govern your access to and use of the websites, software, APIs, documentation, and services made available by PRETHIM ("PRETHIM", "we", "us", or "our").`,
       "By accessing or using a PRETHIM service, you agree to these Terms. If you use a service for a company or another organisation, you confirm that you have authority to accept these Terms on its behalf. If you do not agree, do not use the service.",
       "A product may have additional terms, a product-specific privacy notice, or a separate written agreement. If those terms conflict with these Terms, the product-specific terms or signed agreement will govern the relevant service to the extent of the conflict."
     ],
@@ -88,7 +88,7 @@ const sections = [
   {
     title: "11. Disclaimers",
     paragraphs: [
-      "To the fullest extent permitted by law, PRETHIM services are provided on an "as available" and "as is" basis. We do not warrant that a service will be uninterrupted, error-free, compatible with every system, or suitable for every purpose.",
+      `To the fullest extent permitted by law, PRETHIM services are provided on an "as available" and "as is" basis. We do not warrant that a service will be uninterrupted, error-free, compatible with every system, or suitable for every purpose.`,
       "To the fullest extent permitted by law, we disclaim implied warranties that cannot otherwise be excluded, including implied warranties of merchantability, fitness for a particular purpose, and non-infringement. Nothing in these Terms excludes a warranty or right that cannot lawfully be excluded."
     ],
   },
