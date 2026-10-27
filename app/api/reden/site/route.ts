@@ -1,7 +1,5 @@
 import { NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-
-import { authOptions } from "@/lib/auth";
+import { getAuthenticatedEmail } from "@/lib/authenticated-email";
 import { getActiveConnection } from "@/lib/reden/connection";
 
 export const dynamic = "force-dynamic";
@@ -19,8 +17,7 @@ export const runtime = "nodejs";
 
 export async function GET() {
   try {
-    const session = await getServerSession(authOptions);
-    const ownerEmail = session?.user?.email?.trim().toLowerCase();
+    const ownerEmail = await getAuthenticatedEmail();
 
     if (!ownerEmail) {
       return NextResponse.json(
