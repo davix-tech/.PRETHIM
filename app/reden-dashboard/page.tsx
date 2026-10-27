@@ -961,6 +961,45 @@ function Intelligence({
   );
 }
 
+function Composer({
+  input,
+  setInput,
+  onSubmit,
+  isThinking,
+}: {
+  input: string;
+  setInput: (value: string) => void;
+  onSubmit: (event: FormEvent<HTMLFormElement>) => void;
+  isThinking: boolean;
+}) {
+  return (
+    <form onSubmit={onSubmit}>
+      <div className="group flex min-h-[64px] items-center rounded-2xl border border-white/[0.09] bg-[#101010] px-4 shadow-[0_20px_70px_rgba(0,0,0,0.35)] transition duration-300 focus-within:border-[#C97C3E]/25">
+        <div className="mr-3 hidden h-7 w-7 items-center justify-center rounded-lg border border-white/[0.05] bg-white/[0.025] sm:flex">
+          <Activity size={13} className="text-white/20" />
+        </div>
+        <input
+          value={input}
+          onChange={(event) => setInput(event.target.value)}
+          disabled={isThinking}
+          placeholder="Ask REDEN..."
+          autoComplete="off"
+          className="min-w-0 flex-1 bg-transparent px-1 py-4 text-[13px] text-white outline-none placeholder:text-white/20 disabled:opacity-50"
+        />
+        <button
+          type="submit"
+          disabled={!input.trim() || isThinking}
+          aria-label="Send question"
+          className="ml-3 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-black transition hover:brightness-110 disabled:bg-white/[0.07] disabled:text-white/20"
+          style={{ background: COPPER }}
+        >
+          <ChevronRight size={17} strokeWidth={2.4} />
+        </button>
+      </div>
+    </form>
+  );
+}
+
 /* =========================================================
    SETTINGS
 ========================================================= */
