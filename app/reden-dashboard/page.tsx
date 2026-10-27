@@ -443,7 +443,7 @@ export default function RedenDashboardPage() {
               </span>
 
               <span className="text-[9px] font-medium uppercase tracking-[0.1em] text-white/35">
-                Connected
+                Workspace
               </span>
             </div>
 
@@ -1221,201 +1221,19 @@ function Composer({
 ========================================================= */
 
 function SettingsPage({ storeName }: { storeName: string }) {
-  const [notifications, setNotifications] = useState(true);
-  const [tracking, setTracking] = useState(true);
-  const [emailReports, setEmailReports] = useState(false);
-
   return (
-    <div className="mx-auto w-full max-w-[1050px] px-5 pb-28 pt-8 md:px-8 md:pt-10 lg:pb-16">
-      <div className="mb-12">
-        <div className="mb-5 text-[10px] uppercase tracking-[0.18em] text-white/25">
-          04 / Settings
-        </div>
-
-        <h1 className="text-[40px] font-semibold leading-[0.95] tracking-[-0.06em] md:text-[55px]">
-          Control the
-          <br />
-          <span className="text-white/30">
-            REDEN connection.
-          </span>
-        </h1>
-
-        <p className="mt-5 max-w-xl text-[13px] leading-6 text-white/35">
-          Manage your store connection, intelligence behaviour and account
-          preferences.
-        </p>
+    <div className="mx-auto w-full max-w-[920px] px-5 pb-28 pt-8 md:px-8 md:pt-10 lg:pb-16">
+      <div className="mb-10">
+        <div className="mb-4 text-[10px] uppercase tracking-[0.18em] text-white/25">Settings</div>
+        <h1 className="text-[40px] font-semibold leading-[0.98] tracking-[-0.06em] md:text-[55px]">A clear view of<br /><span className="text-white/30">your connection.</span></h1>
+        <p className="mt-5 max-w-xl text-[13px] leading-6 text-white/35">Only verified connection details are shown here. Persistent monitoring, notification, billing, and account controls will appear when they are connected to real settings.</p>
       </div>
-
-      <div className="grid gap-4 lg:grid-cols-[1fr_0.75fr]">
-        <div className="space-y-4">
-          <SettingsSection
-            number="01"
-            title="Store"
-            description="The storefront currently connected to REDEN."
-          >
-            <SettingsItem
-              icon={Store}
-              title="Store name"
-              description="Your connected business"
-              value={storeName}
-            />
-
-            <SettingsItem
-              icon={Globe2}
-              title="Store domain"
-              description="The domain REDEN is monitoring"
-              value="Connected"
-              valueAccent
-            />
-
-            <SettingsItem
-              icon={Wifi}
-              title="Connection"
-              description="SDK and event connection status"
-              value="Active"
-              valueAccent
-            />
-          </SettingsSection>
-
-          <SettingsSection
-            number="02"
-            title="Intelligence"
-            description="Choose what REDEN is allowed to monitor and surface."
-          >
-            <ToggleSetting
-              icon={Activity}
-              title="Behaviour tracking"
-              description="Allow REDEN to evaluate storefront activity."
-              enabled={tracking}
-              onChange={() => setTracking(!tracking)}
-            />
-
-            <ToggleSetting
-              icon={Bell}
-              title="Business signals"
-              description="Surface meaningful changes in business activity."
-              enabled={notifications}
-              onChange={() => setNotifications(!notifications)}
-            />
-
-            <ToggleSetting
-              icon={BarChart3}
-              title="Email summaries"
-              description="Receive periodic business intelligence summaries."
-              enabled={emailReports}
-              onChange={() => setEmailReports(!emailReports)}
-            />
-          </SettingsSection>
-
-          <SettingsSection
-            number="03"
-            title="Data"
-            description="Understand the data REDEN currently has access to."
-          >
-            <SettingsItem
-              icon={Database}
-              title="Business events"
-              description="Store activity being evaluated"
-              value="Available"
-              valueAccent
-            />
-
-            <SettingsItem
-              icon={ShieldCheck}
-              title="Data protection"
-              description="REDEN keeps merchant credentials private."
-              value="Protected"
-            />
-          </SettingsSection>
-        </div>
-
-        <div className="space-y-4">
-          <div className="relative overflow-hidden rounded-3xl border border-[#C97C3E]/[0.14] bg-[#C97C3E]/[0.035] p-6">
-            <div
-              className="absolute right-[-80px] top-[-80px] h-[220px] w-[220px] rounded-full blur-[80px]"
-              style={{ background: `${COPPER}0F` }}
-            />
-
-            <div className="relative">
-              <div className="flex items-center justify-between">
-                <div className="text-[9px] uppercase tracking-[0.16em] text-[#C97C3E]/60">
-                  Current plan
-                </div>
-
-                <div className="rounded-full border border-[#C97C3E]/[0.15] bg-[#C97C3E]/[0.06] px-2.5 py-1 text-[8px] font-medium text-[#DFA16E]">
-                  FREE
-                </div>
-              </div>
-
-              <div className="mt-8 text-[30px] font-semibold tracking-[-0.06em]">
-                Free
-              </div>
-
-              <p className="mt-2 text-[10px] leading-5 text-white/30">
-                Core REDEN intelligence for getting your store connected and
-                learning from real business activity.
-              </p>
-
-              <div className="mt-7 space-y-2">
-                <PlanFeature text="Store connection" />
-                <PlanFeature text="Revenue intelligence" />
-                <PlanFeature text="Decision evaluation" />
-                <PlanFeature text="REDEN Intelligence" />
-              </div>
-
-              <button
-                type="button"
-                className="mt-7 flex w-full items-center justify-center gap-2 rounded-xl border border-[#C97C3E]/[0.15] bg-[#C97C3E]/[0.07] py-3 text-[10px] font-medium text-[#DFA16E] transition hover:bg-[#C97C3E]/[0.11]"
-              >
-                View plan details
-                <ArrowUpRight size={12} />
-              </button>
-            </div>
-          </div>
-
-          <SettingsSection
-            number="04"
-            title="Account"
-            description="Your REDEN account and access."
-          >
-            <SettingsItem
-              icon={User}
-              title="Account"
-              description="Signed-in merchant account"
-              value={storeName}
-            />
-
-            <SettingsItem
-              icon={CircleDollarSign}
-              title="Billing"
-              description="Plan and payment settings"
-              value="Free"
-            />
-
-            <button
-              type="button"
-              className="flex w-full items-center gap-3 rounded-xl px-2 py-3 text-left transition hover:bg-red-500/[0.035]"
-            >
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-red-500/[0.06]">
-                <LogOut
-                  size={13}
-                  className="text-red-400/70"
-                />
-              </div>
-
-              <div>
-                <div className="text-[10px] font-medium text-red-400/70">
-                  Sign out
-                </div>
-
-                <div className="mt-0.5 text-[8px] text-white/20">
-                  End this REDEN session
-                </div>
-              </div>
-            </button>
-          </SettingsSection>
-        </div>
-      </div>
+      <section className="rounded-2xl border border-white/[0.07] bg-white/[0.018] p-5 md:p-7">
+        <div className="text-[10px] uppercase tracking-[0.14em] text-white/30">Connected storefront</div>
+        <div className="mt-3 text-xl font-medium tracking-[-0.035em] text-white/80">{storeName}</div>
+        <p className="mt-3 max-w-xl text-[12px] leading-6 text-white/35">Store selection and connection diagnostics are handled through the existing storefront connection flow. This screen does not currently save preference changes.</p>
+        <Link href="/reden-addstore" className="mt-5 inline-flex items-center gap-2 text-[11px] font-medium text-[#C97C3E] transition hover:text-[#DFA16E]">Manage storefront connection <ArrowUpRight size={13} /></Link>
+      </section>
     </div>
   );
 }
