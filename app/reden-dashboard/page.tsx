@@ -24,7 +24,6 @@ import {
   MoreHorizontal,
   Settings,
   ShieldCheck,
-  Sparkles,
   Store,
   TrendingUp,
   User,
@@ -40,13 +39,6 @@ type Message = {
   id: number;
   role: "user" | "reden";
   content: string;
-};
-
-type Conversation = {
-  id: number;
-  title: string;
-  preview: string;
-  date: string;
 };
 
 type IntelligenceResponse = {
@@ -97,7 +89,7 @@ const NAV_ITEMS = [
   {
     key: "intelligence" as Route,
     label: "Intelligence",
-    icon: Sparkles,
+    icon: Activity,
     number: "03",
   },
   {
@@ -114,8 +106,6 @@ const SUGGESTIONS = [
   "Why are sales down?",
   "What should I pay attention to?",
 ];
-
-const INITIAL_CONVERSATIONS: Conversation[] = [];
 
 /* =========================================================
    FORMATTING HELPERS
@@ -141,10 +131,6 @@ export default function RedenDashboardPage() {
   const [input, setInput] = useState("");
   const [messages, setMessages] = useState<Message[]>([]);
   const [isThinking, setIsThinking] = useState(false);
-
-  const [conversations, setConversations] = useState<Conversation[]>(
-    INITIAL_CONVERSATIONS
-  );
 
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
@@ -302,18 +288,6 @@ export default function RedenDashboardPage() {
         },
       ]);
 
-      setConversations((current) => [
-        {
-          id: Date.now(),
-          title:
-            question.length > 38
-              ? `${question.slice(0, 38)}...`
-              : question,
-          preview: question,
-          date: "Just now",
-        },
-        ...current,
-      ]);
     } catch (error) {
       const message =
         error instanceof Error
@@ -588,7 +562,6 @@ export default function RedenDashboardPage() {
             messages={messages}
             isThinking={isThinking}
             hasConversation={hasConversation}
-            conversations={conversations}
             onSubmit={handleSubmit}
             onSuggestion={askQuestion}
           />
@@ -745,7 +718,7 @@ function Overview({
           onClick={onOpenIntelligence}
           className="group flex w-fit items-center gap-3 rounded-2xl border border-[#C97C3E]/[0.18] bg-[#C97C3E]/[0.045] px-5 py-3.5 text-[11px] font-medium text-[#DFA16E] transition duration-300 hover:border-[#C97C3E]/30 hover:bg-[#C97C3E]/[0.08]"
         >
-          <Sparkles size={14} />
+          <Activity size={14} />
           Ask REDEN
           <ChevronRight
             size={14}
@@ -757,13 +730,7 @@ function Overview({
       {/* METRICS */}
 
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-        <MetricCard
-          number="01"
-          label="Revenue"
-          value={revenueValue}
-          detail="Today"
-          icon={CircleDollarSign}
-        />
+
 
         <MetricCard
           number="02"
@@ -787,6 +754,15 @@ function Overview({
           value={purchasesValue}
           detail="Today"
           icon={TrendingUp}
+        />
+
+        <MetricCard
+          number="01"
+          label="Revenue"
+          value={revenueValue}
+          detail="Today"
+          icon={CircleDollarSign}
+          subdued
         />
       </div>
 
@@ -824,15 +800,17 @@ function MetricCard({
   value,
   detail,
   icon: Icon,
+  subdued = false,
 }: {
   number: string;
   label: string;
   value: string;
   detail: string;
   icon: typeof CircleDollarSign;
+  subdued?: boolean;
 }) {
   return (
-    <div className="group relative overflow-hidden rounded-3xl border border-white/[0.07] bg-white/[0.018] p-5 transition duration-500 hover:-translate-y-0.5 hover:border-white/[0.11] hover:bg-white/[0.025]">
+    <div className={["group relative overflow-hidden rounded-3xl border p-4 transition duration-300 md:p-5", subdued ? "border-white/[0.045] bg-white/[0.008]" : "border-white/[0.07] bg-white/[0.018] hover:border-white/[0.11] hover:bg-white/[0.025]"].join(" ")}>
       <div className="absolute right-[-15px] top-[-22px] text-[76px] font-semibold leading-none tracking-[-0.08em] text-white/[0.018] transition duration-500 group-hover:text-[#C97C3E]/[0.035]">
         {number}
       </div>
@@ -852,7 +830,7 @@ function MetricCard({
         />
       </div>
 
-      <div className="relative mt-7 text-[25px] font-semibold tracking-[-0.05em] text-white/90">
+      <div className={["relative mt-6 font-semibold tracking-[-0.05em]", subdued ? "text-[19px] text-white/55" : "text-[25px] text-white/90"].join(" ")}>
         {value}
       </div>
 
@@ -924,7 +902,6 @@ function Intelligence({
   messages,
   isThinking,
   hasConversation,
-  conversations,
   onSubmit,
   onSuggestion,
 }: {
@@ -933,248 +910,56 @@ function Intelligence({
   messages: Message[];
   isThinking: boolean;
   hasConversation: boolean;
-  conversations: Conversation[];
   onSubmit: (event: FormEvent<HTMLFormElement>) => void;
   onSuggestion: (question: string) => void;
 }) {
-  const [showHistory, setShowHistory] = useState(true);
-
   return (
     <div className="relative min-h-[calc(100vh-62px)]">
+      <div className="mx-auto flex w-full max-w-[960px] items-center justify-between px-5 pb-4 pt-7 md:px-8">
+        <div>
+          <div className="text-[9px] uppercase tracking-[0.16em] text-white/25">REDEN / Intelligence</div>
+          <div className="mt-1 text-[12px] text-white/55">Business analysis, grounded in your store data</div>
+        </div>
+      </div>
+
       {!hasConversation ? (
-        <div className="mx-auto flex min-h-[calc(100vh-62px)] w-full max-w-[1100px] flex-col px-5 pb-28 pt-10 md:px-8 md:pt-16 lg:flex-row lg:gap-12">
-          <div className="flex min-w-0 flex-1 flex-col items-center justify-center">
-            <div className="mb-8 flex items-center gap-2 rounded-full border border-white/[0.07] bg-white/[0.025] px-3 py-1.5">
-              <div className="relative h-2 w-2">
-                <div
-                  className="absolute inset-0 rounded-full blur-[4px]"
-                  style={{ background: COPPER }}
-                />
-
-                <div
-                  className="relative h-2 w-2 rounded-full"
-                  style={{ background: COPPER }}
-                />
-              </div>
-
-              <span className="text-[9px] font-medium uppercase tracking-[0.15em] text-white/40">
-                Intelligence
-              </span>
-            </div>
-
-            <div className="mb-3 text-[9px] uppercase tracking-[0.2em] text-white/20">
-              03 / Ask
-            </div>
-
-            <h1 className="max-w-3xl text-center text-[40px] font-semibold leading-[0.98] tracking-[-0.065em] md:text-[60px]">
-              Ask your
-              <br />
-              <span className="text-white/30">
-                business anything.
-              </span>
-            </h1>
-
-            <p className="mt-5 max-w-lg text-center text-[12px] leading-6 text-white/30">
-              REDEN turns activity across your store into answers,
-              observations and decisions you can act on.
-            </p>
-
-            <div className="mt-10 w-full max-w-[720px]">
-              <Composer
-                input={input}
-                setInput={setInput}
-                onSubmit={onSubmit}
-                isThinking={isThinking}
-              />
-
-              <div className="mt-4 flex flex-wrap justify-center gap-2">
-                {SUGGESTIONS.map((suggestion) => (
-                  <button
-                    key={suggestion}
-                    type="button"
-                    onClick={() => onSuggestion(suggestion)}
-                    className="rounded-full border border-white/[0.07] bg-white/[0.02] px-3.5 py-2 text-[10px] text-white/35 transition duration-300 hover:border-[#C97C3E]/20 hover:bg-[#C97C3E]/[0.04] hover:text-white/70"
-                  >
-                    {suggestion}
-                  </button>
-                ))}
-              </div>
+        <div className="mx-auto flex min-h-[calc(100vh-260px)] w-full max-w-[820px] flex-col justify-center px-5 pb-36 pt-8 md:px-8">
+          <div className="max-w-2xl">
+            <div className="text-[11px] font-medium uppercase tracking-[0.14em] text-[#C97C3E]/80">REDEN Intelligence</div>
+            <h1 className="mt-4 text-[34px] font-medium leading-[1.08] tracking-[-0.055em] text-white/90 md:text-[48px]">What should we<br /><span className="text-white/35">look into today?</span></h1>
+            <p className="mt-4 max-w-xl text-[13px] leading-6 text-white/35">Ask a direct question about your store. REDEN should separate observed facts from interpretation and be clear when the data cannot support a conclusion.</p>
+            <div className="mt-7 flex flex-wrap gap-2">
+              {SUGGESTIONS.map((suggestion) => <button key={suggestion} type="button" onClick={() => onSuggestion(suggestion)} className="rounded-full border border-white/[0.08] bg-white/[0.025] px-3.5 py-2.5 text-left text-[10px] text-white/50 transition hover:border-[#C97C3E]/30 hover:bg-[#C97C3E]/[0.05] hover:text-white/80">{suggestion}</button>)}
             </div>
           </div>
-
-          <aside className="mt-12 w-full lg:mt-0 lg:w-[280px] lg:self-end">
-            <div className="rounded-3xl border border-white/[0.07] bg-white/[0.018] p-4">
-              <div className="flex items-center justify-between px-2 py-2">
-                <div>
-                  <div className="text-[11px] font-medium text-white/55">
-                    Previous conversations
-                  </div>
-
-                  <div className="mt-1 text-[9px] text-white/20">
-                    Your recent intelligence sessions
-                  </div>
-                </div>
-
-                <Clock3 size={14} className="text-white/20" />
-              </div>
-
-              <div className="mt-3 space-y-1">
-                {conversations.map((conversation) => (
-                  <button
-                    key={conversation.id}
-                    type="button"
-                    onClick={() =>
-                      onSuggestion(conversation.preview)
-                    }
-                    className="group w-full rounded-2xl px-3 py-3 text-left transition hover:bg-white/[0.04]"
-                  >
-                    <div className="flex items-start justify-between gap-3">
-                      <span className="truncate text-[10px] font-medium text-white/50 group-hover:text-white/75">
-                        {conversation.title}
-                      </span>
-
-                      <ChevronRight
-                        size={12}
-                        className="shrink-0 text-white/15 transition group-hover:text-[#C97C3E]"
-                      />
-                    </div>
-
-                    <div className="mt-1 text-[9px] text-white/20">
-                      {conversation.date}
-                    </div>
-                  </button>
-                ))}
-              </div>
-            </div>
-          </aside>
         </div>
       ) : (
-        <div className="mx-auto flex min-h-[calc(100vh-62px)] w-full max-w-[1080px] px-5 pb-32 pt-8 md:px-8">
-          <div className="flex min-w-0 flex-1 flex-col">
-            <div className="mb-10 flex items-center justify-between">
-              <div>
-                <div className="text-[9px] uppercase tracking-[0.16em] text-white/20">
-                  Intelligence / Session
+        <div className="mx-auto min-h-[calc(100vh-220px)] w-full max-w-[820px] px-5 pb-48 pt-8 md:px-8">
+          <div className="space-y-10">
+            {messages.map((message) => <div key={message.id}>
+              {message.role === "user" ? (
+                <div className="flex justify-end"><div className="max-w-[88%] rounded-2xl bg-white/[0.07] px-4 py-3 text-[13px] leading-6 text-white/80 md:max-w-[78%]">{message.content}</div></div>
+              ) : (
+                <div className="max-w-[760px]">
+                  <div className="mb-3 text-[10px] font-medium uppercase tracking-[0.14em] text-[#C97C3E]/85">REDEN</div>
+                  <div className="whitespace-pre-wrap text-[13px] leading-7 text-white/75 md:text-[14px]">{message.content}</div>
                 </div>
-
-                <div className="mt-1 text-[12px] text-white/45">
-                  REDEN analysis
-                </div>
-              </div>
-
-              <button
-                type="button"
-                onClick={() => setShowHistory(!showHistory)}
-                className="flex items-center gap-2 rounded-xl border border-white/[0.06] bg-white/[0.02] px-3 py-2 text-[9px] text-white/30 transition hover:bg-white/[0.04] hover:text-white/60"
-              >
-                <Clock3 size={12} />
-                History
-              </button>
-            </div>
-
-            <div className="flex gap-8">
-              <div className="min-w-0 flex-1">
-                <div className="space-y-10">
-                  {messages.map((message) => (
-                    <div key={message.id}>
-                      {message.role === "user" ? (
-                        <div className="flex justify-end">
-                          <div className="max-w-[82%] rounded-2xl border border-white/[0.07] bg-white/[0.055] px-4 py-3 text-[12px] leading-6 text-white/70">
-                            {message.content}
-                          </div>
-                        </div>
-                      ) : (
-                        <div>
-                          <div className="mb-3 flex items-center gap-2">
-                            <div className="relative flex h-6 w-6 items-center justify-center rounded-full border border-[#C97C3E]/[0.12] bg-[#C97C3E]/[0.04]">
-                              <div
-                                className="h-1.5 w-1.5 rounded-full shadow-[0_0_8px_rgba(201,124,62,0.7)]"
-                                style={{ background: COPPER }}
-                              />
-                            </div>
-
-                            <span className="text-[10px] font-medium uppercase tracking-[0.12em] text-white/35">
-                              REDEN
-                            </span>
-                          </div>
-
-                          <div className="whitespace-pre-wrap text-[13px] leading-7 text-white/65">
-                            {message.content}
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  ))}
-
-                  {isThinking && (
-                    <div className="flex items-center gap-2 text-[10px] text-white/25">
-                      <div
-                        className="h-1.5 w-1.5 animate-pulse rounded-full"
-                        style={{ background: COPPER }}
-                      />
-
-                      REDEN is examining the available evidence...
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {showHistory && (
-                <aside className="hidden w-[220px] shrink-0 xl:block">
-                  <div className="sticky top-[110px] rounded-2xl border border-white/[0.06] bg-white/[0.015] p-3">
-                    <div className="px-2 py-2 text-[9px] uppercase tracking-[0.14em] text-white/20">
-                      Previous
-                    </div>
-
-                    <div className="space-y-1">
-                      {conversations.map((conversation) => (
-                        <button
-                          key={conversation.id}
-                          type="button"
-                          onClick={() =>
-                            onSuggestion(conversation.preview)
-                          }
-                          className="group w-full rounded-xl px-2.5 py-2.5 text-left hover:bg-white/[0.035]"
-                        >
-                          <div className="truncate text-[9px] text-white/45 group-hover:text-white/70">
-                            {conversation.title}
-                          </div>
-
-                          <div className="mt-1 text-[8px] text-white/15">
-                            {conversation.date}
-                          </div>
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                </aside>
               )}
-            </div>
-
-            <div className="fixed bottom-0 left-0 right-0 z-30 border-t border-white/[0.06] bg-[#080706]/90 px-5 py-4 backdrop-blur-xl">
-              <div className="mx-auto max-w-[760px]">
-                <Composer
-                  input={input}
-                  setInput={setInput}
-                  onSubmit={onSubmit}
-                  isThinking={isThinking}
-                />
-
-                <div className="mt-2 text-center text-[8px] text-white/15">
-                  REDEN answers from your connected business data.
-                </div>
-              </div>
-            </div>
+            </div>)}
+            {isThinking && <div className="max-w-[760px]"><div className="mb-3 text-[10px] font-medium uppercase tracking-[0.14em] text-[#C97C3E]/85">REDEN</div><div className="flex items-center gap-2 text-[12px] text-white/35"><span className="h-1.5 w-1.5 animate-pulse rounded-full bg-[#C97C3E]" />Reviewing available store evidence…</div></div>}
           </div>
         </div>
       )}
+
+      <div className="fixed inset-x-0 bottom-[76px] z-30 border-t border-white/[0.06] bg-[#090807]/95 px-4 py-4 backdrop-blur-2xl lg:bottom-0 lg:px-6">
+        <div className="mx-auto max-w-[820px]">
+          <Composer input={input} setInput={setInput} onSubmit={onSubmit} isThinking={isThinking} />
+          <div className="mt-2 text-center text-[8px] text-white/20">REDEN can only answer from the evidence available to it. Verify important decisions against your store records.</div>
+        </div>
+      </div>
     </div>
   );
 }
-
-/* =========================================================
-   COMPOSER
-========================================================= */
 
 function Composer({
   input,
@@ -1189,11 +974,10 @@ function Composer({
 }) {
   return (
     <form onSubmit={onSubmit}>
-      <div className="group flex min-h-[64px] items-center rounded-2xl border border-white/[0.09] bg-[#101010] px-4 shadow-[0_20px_70px_rgba(0,0,0,0.35)] transition duration-300 focus-within:border-[#C97C3E]/25 focus-within:shadow-[0_20px_80px_rgba(0,0,0,0.45),0_0_35px_rgba(201,124,62,0.035)]">
+      <div className="group flex min-h-[64px] items-center rounded-2xl border border-white/[0.09] bg-[#101010] px-4 shadow-[0_20px_70px_rgba(0,0,0,0.35)] transition duration-300 focus-within:border-[#C97C3E]/25">
         <div className="mr-3 hidden h-7 w-7 items-center justify-center rounded-lg border border-white/[0.05] bg-white/[0.025] sm:flex">
-          <Sparkles size={13} className="text-white/20" />
+          <Activity size={13} className="text-white/20" />
         </div>
-
         <input
           value={input}
           onChange={(event) => setInput(event.target.value)}
@@ -1202,7 +986,6 @@ function Composer({
           autoComplete="off"
           className="min-w-0 flex-1 bg-transparent px-1 py-4 text-[13px] text-white outline-none placeholder:text-white/20 disabled:opacity-50"
         />
-
         <button
           type="submit"
           disabled={!input.trim() || isThinking}
