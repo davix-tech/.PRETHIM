@@ -18,6 +18,7 @@ export default function SignInPage() {
     "idle" | "sending" | "sent" | "error"
   >("idle");
   const [errorMsg, setErrorMsg] = useState("");
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
 
   useEffect(() => {
     if (status === "authenticated") {
@@ -39,6 +40,12 @@ export default function SignInPage() {
 
   const handleMagicLink = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (!acceptedTerms) {
+      setErrorMsg("Please accept the Terms of Service and Privacy Policy to continue.");
+      setEmailStatus("error");
+      return;
+    }
 
     if (!email || !email.includes("@")) {
       setErrorMsg("Enter a valid email address.");
@@ -106,11 +113,19 @@ export default function SignInPage() {
           {/* Google Sign In */}
           <button
             type="button"
-            onClick={() =>
+            onClick={() => {
+              if (!acceptedTerms) {
+                setErrorMsg("Please accept the Terms of Service and Privacy Policy to continue.");
+                setEmailStatus("error");
+                return;
+              }
+
               signIn("google", {
                 callbackUrl: "/dashboard",
-              })
-            }
+              });
+            }}
+            aria-disabled={!acceptedTerms}
+            title={!acceptedTerms ? "Accept the Terms of Service and Privacy Policy to continue" : undefined}
             className="flex h-11 w-full items-center justify-center gap-2.5 rounded-xl border border-white/[0.12] bg-[#F5F1EA] text-xs font-semibold text-[#0A0A0A] shadow-[0_4px_18px_rgba(0,0,0,0.16)] transition-all duration-200 hover:-translate-y-px hover:bg-white hover:shadow-[0_8px_28px_rgba(0,0,0,0.25)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#C97C3E]/60"
           >
             <svg
@@ -208,9 +223,35 @@ export default function SignInPage() {
                 )}
               </div>
 
+              <label className="flex items-start gap-3 rounded-xl border border-white/[0.08] bg-black/15 p-3.5 text-left text-[11px] leading-relaxed text-[#8F8676]">
+                <input
+                  type="checkbox"
+                  checked={acceptedTerms}
+                  onChange={(e) => {
+                    setAcceptedTerms(e.target.checked);
+                    if (emailStatus === "error") {
+                      setEmailStatus("idle");
+                      setErrorMsg("");
+                    }
+                  }}
+                  className="mt-0.5 h-4 w-4 shrink-0 accent-[#C97C3E] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C97C3E]/60"
+                  aria-describedby="terms-acceptance-help"
+                />
+                <span id="terms-acceptance-help">
+                  I have read and agree to PRETHIM’s{" "}
+                  <a href="/terms" target="_blank" rel="noopener noreferrer" className="text-[#ECE4D8] underline underline-offset-2 hover:text-white">
+                    Terms of Service
+                  </a>{" "}
+                  and acknowledge the{" "}
+                  <a href="/privacy" target="_blank" rel="noopener noreferrer" className="text-[#ECE4D8] underline underline-offset-2 hover:text-white">
+                    Privacy Policy
+                  </a>.
+                </span>
+              </label>
+
               <button
                 type="submit"
-                disabled={emailStatus === "sending"}
+                disabled={emailStatus === "sending" || !acceptedTerms}
                 className={`h-11 w-full rounded-xl border border-white/[0.10] bg-white/[0.025] text-xs font-semibold text-[#F5F1EA] transition-all duration-200 hover:border-white/[0.18] hover:bg-white/[0.055] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#C97C3E]/50 ${
                   emailStatus === "sending"
                     ? "opacity-50 cursor-default"
