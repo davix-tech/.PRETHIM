@@ -1,7 +1,5 @@
 import { NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-
-import { authOptions } from "@/lib/auth";
+import { getAuthenticatedEmail } from "@/lib/authenticated-email";
 import { getActiveConnection } from "@/lib/reden/connection";
 import {
   REDEN_API_URL,
@@ -78,13 +76,7 @@ export async function GET(req: Request) {
        1. AUTHENTICATE
     ===================================================== */
 
-    const session =
-      await getServerSession(authOptions);
-
-    const ownerEmail =
-      session?.user?.email
-        ?.trim()
-        .toLowerCase();
+    const ownerEmail = await getAuthenticatedEmail();
 
     if (!ownerEmail) {
       return jsonError(
