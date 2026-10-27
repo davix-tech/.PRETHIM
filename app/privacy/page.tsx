@@ -10,7 +10,7 @@ const sections = [
   {
     title: "1. Who this policy covers",
     paragraphs: [
-      "This Privacy Policy explains how PRETHIM ("PRETHIM", "we", "us", or "our") collects, uses, stores, and shares personal information when you visit our website, contact us, create an account, use our software, or interact with our APIs and other services.",
+      `This Privacy Policy explains how PRETHIM ("PRETHIM", "we", "us", or "our") collects, uses, stores, and shares personal information when you visit our website, contact us, create an account, use our software, or interact with our APIs and other services.`,
       "Some PRETHIM products may have a separate privacy notice describing product-specific data and processing. That notice supplements this policy and should be read alongside it.",
       "When an organisation uses a PRETHIM service to process personal information about its own customers, that organisation may decide why and how the information is processed. In those cases, the organisation is responsible for its own legal obligations, and PRETHIM's role depends on the service and the applicable agreement."
     ],
