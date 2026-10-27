@@ -1,8 +1,7 @@
 import { NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
 
-import { authOptions } from "@/lib/auth";
 import { getAdminSupabase } from "@/lib/reden/connection";
+import { getAuthenticatedEmail } from "@/lib/authenticated-email";
 
 import {
   REDEN_API_URL,
@@ -114,11 +113,7 @@ export async function GET(req: Request) {
        1. AUTHENTICATE PRETHIM USER
     ===================================================== */
 
-    const session = await getServerSession(authOptions);
-
-    const developerEmail = cleanString(
-      session?.user?.email
-    ).toLowerCase();
+    const developerEmail = (await getAuthenticatedEmail()) || "";
 
     if (!developerEmail) {
       return jsonError("unauthorized", 401);
