@@ -820,36 +820,6 @@ export default function HomePage() {
           </div>
         </section>
 
-        {/* PARTNER INVITATION */}
-        <section className="px-5 pb-28 pt-24 sm:px-8 sm:pb-32 sm:pt-32">
-          <Reveal>
-            <div className="border-t border-white/[0.07] pt-16 sm:pt-20">
-              <div className="max-w-2xl">
-                <h2 className="text-2xl font-medium leading-[1.08] tracking-[-0.04em] text-[#F5EFE6] sm:text-4xl">
-                  Do you want to build with PRETHIM?
-                </h2>
-
-                <p className="mt-5 max-w-lg text-sm leading-7 text-[#756B63] sm:text-base">
-                  We&apos;re working with teams building software that needs
-                  to make better decisions in real time.
-                </p>
-
-                <Link
-                  href="/partnership"
-                  className="group mt-7 inline-flex items-center gap-2 text-xs font-medium uppercase tracking-[0.1em] text-[#C98B59] transition-colors hover:text-[#E0A16D]"
-                >
-                  Become a partner
-
-                  <ArrowRight
-                    aria-hidden="true"
-                    className="h-3.5 w-3.5 transition-transform group-hover:translate-x-1"
-                  />
-                </Link>
-              </div>
-            </div>
-          </Reveal>
-        </section>
-
         {/* FOOTER */}
         <footer className="border-t border-white/[0.06] px-5 py-10 sm:px-8 sm:py-12">
           <div className="flex flex-col gap-8 sm:flex-row sm:items-end sm:justify-between">
