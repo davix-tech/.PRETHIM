@@ -32,6 +32,7 @@ type IntelligenceEvidence = {
   // Current REDEN evidence contract.
   uniqueSessions?: number;
   eventCounts?: Record<string, number>;
+  totalEvents?: number;
   decisions?: number | {
     completed?: number;
     conversions?: number;
