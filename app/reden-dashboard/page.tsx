@@ -58,8 +58,12 @@ type SiteResponse = {
 type Metrics = {
   revenue: number;
   visitors: number;
+  checkouts?: number;
   purchases: number;
   conversionRate: number;
+  eventCounts?: Record<string, number>;
+  totalEvents?: number;
+  eventsWindow?: string;
 };
 
 type MetricsResponse = {
@@ -104,6 +108,16 @@ const SUGGESTIONS = [
   "What happened today?",
   "Why are sales down?",
   "What should I pay attention to?",
+];
+
+const RECORDED_EVENT_LABELS = [
+  { key: "PAGE_VIEW", label: "Page views" },
+  { key: "PRODUCT_VIEW", label: "Product views" },
+  { key: "ADD_TO_CART", label: "Added to cart" },
+  { key: "CHECKOUT_STARTED", label: "Checkouts started" },
+  { key: "PURCHASE", label: "Purchases" },
+  { key: "SESSION_START", label: "Sessions started" },
+  { key: "SESSION_END", label: "Sessions ended" },
 ];
 
 /* =========================================================
@@ -671,6 +685,9 @@ function Overview({
     ? "—"
     : formatCount(metrics.purchases);
 
+  const eventCounts = metrics?.eventCounts ?? {};
+  const totalEvents = metrics?.totalEvents ?? Object.values(eventCounts).reduce((sum, value) => sum + Number(value || 0), 0);
+
   return (
     <div className="mx-auto w-full max-w-[1180px] px-5 pb-28 pt-8 md:px-8 md:pt-10 lg:pb-16">
       {/* HERO */}
@@ -752,6 +769,20 @@ function Overview({
           subdued
         />
       </div>
+
+      {/* RECORDED EVENTS */}
+      <section className="mt-4 rounded-2xl border border-white/[0.07] bg-white/[0.018] p-5 md:p-6">
+        <div className="flex flex-wrap items-end justify-between gap-3">
+          <div><div className="text-[10px] uppercase tracking-[0.14em] text-white/30">Recorded events</div><h2 className="mt-2 text-[15px] font-medium text-white/75">Store activity received by REDEN</h2></div>
+          <span className="text-[10px] text-white/35">{metricsLoading ? "Loading…" : metricsError || !metrics ? "Unavailable" : `${formatCount(totalEvents)} events · today`}</span>
+        </div>
+        {metricsLoading ? <p className="mt-4 text-[12px] leading-6 text-white/35">Loading recorded event counts…</p> : metricsError || !metrics ? <p className="mt-4 text-[12px] leading-6 text-white/35">Recorded event counts could not be loaded. This is unavailable data, not a zero count.</p> : totalEvents === 0 ? <p className="mt-4 text-[12px] leading-6 text-white/35">No events were recorded in today’s reporting window. If the storefront was active, check SDK delivery and event tracking.</p> : (
+          <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4">
+            {RECORDED_EVENT_LABELS.filter((item) => Number(eventCounts[item.key] || 0) > 0).map((item) => <div key={item.key} className="rounded-xl border border-white/[0.06] bg-black/20 px-3 py-3"><div className="text-[10px] text-white/35">{item.label}</div><div className="mt-2 text-xl font-medium tracking-[-0.04em] text-white/85">{formatCount(Number(eventCounts[item.key] || 0))}</div></div>)}
+            {Object.entries(eventCounts).filter(([key, value]) => !RECORDED_EVENT_LABELS.some((item) => item.key === key) && Number(value) > 0).map(([key, value]) => <div key={key} className="rounded-xl border border-white/[0.06] bg-black/20 px-3 py-3"><div className="text-[10px] text-white/35">{key.replaceAll("_", " ")}</div><div className="mt-2 text-xl font-medium tracking-[-0.04em] text-white/85">{formatCount(Number(value))}</div></div>)}
+          </div>
+        )}
+      </section>
 
       {/* REVENUE INTELLIGENCE */}
       <section className="mt-4 grid gap-4 lg:grid-cols-[1.2fr_0.8fr]">
