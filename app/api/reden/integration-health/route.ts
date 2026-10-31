@@ -23,6 +23,7 @@ type EvidenceEvent = {
 
 type IntelligenceEvidence = {
   events?: EvidenceEvent[];
+  eventCounts?: Record<string, number>;
 };
 
 type IntelligenceResponse = {
@@ -33,15 +34,12 @@ type IntelligenceResponse = {
 
 function eventReceived(
   events: EvidenceEvent[] | undefined,
-  name: string
+  name: string,
+  eventCounts?: Record<string, number>
 ): boolean {
-  return (
-    events?.some(
-      (item) =>
-        item.event === name &&
-        Number(item.count) > 0
-    ) ?? false
-  );
+  const directCount = Number(eventCounts?.[name]);
+  if (Number.isFinite(directCount) && directCount > 0) return true;
+  return events?.some((item) => item.event === name && Number(item.count) > 0) ?? false;
 }
 
 function jsonError(
@@ -360,37 +358,43 @@ export async function GET(req: Request) {
     const pageView =
       eventReceived(
         events,
-        "PAGE_VIEW"
+        "PAGE_VIEW",
+        data.evidence?.eventCounts
       );
 
     const productView =
       eventReceived(
         events,
-        "PRODUCT_VIEW"
+        "PRODUCT_VIEW",
+        data.evidence?.eventCounts
       );
 
     const addToCart =
       eventReceived(
         events,
-        "ADD_TO_CART"
+        "ADD_TO_CART",
+        data.evidence?.eventCounts
       );
 
     const checkoutStarted =
       eventReceived(
         events,
-        "CHECKOUT_STARTED"
+        "CHECKOUT_STARTED",
+        data.evidence?.eventCounts
       );
 
     const purchase =
       eventReceived(
         events,
-        "PURCHASE"
+        "PURCHASE",
+        data.evidence?.eventCounts
       );
 
     const sessionEnd =
       eventReceived(
         events,
-        "SESSION_END"
+        "SESSION_END",
+        data.evidence?.eventCounts
       );
 
     /*

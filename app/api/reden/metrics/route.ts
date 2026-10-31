@@ -32,6 +32,7 @@ type IntelligenceEvidence = {
   // Current REDEN evidence contract.
   uniqueSessions?: number;
   eventCounts?: Record<string, number>;
+  totalEvents?: number;
   decisions?: number | {
     completed?: number;
     conversions?: number;
@@ -370,6 +371,14 @@ export async function GET(req: Request) {
     const evidence =
       data.evidence || {};
 
+    const eventCounts: Record<string, number> =
+      evidence.eventCounts ??
+      Object.fromEntries(
+        (evidence.events ?? []).map((item) => [item.event, Number(item.count || 0)])
+      );
+    const totalEvents = finiteNumber(evidence.totalEvents) ??
+      Object.values(eventCounts).reduce((sum, value) => sum + Number(value || 0), 0);
+
     /*
      * REDEN's current evidence contract uses:
      * - uniqueSessions for visitors
@@ -443,6 +452,9 @@ export async function GET(req: Request) {
           checkouts,
           purchases,
           conversionRate,
+          eventCounts,
+          totalEvents,
+          eventsWindow: "today",
         },
         generatedAt:
           new Date().toISOString(),
