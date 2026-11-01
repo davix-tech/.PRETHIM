@@ -769,7 +769,39 @@ export async function PATCH(req: Request) {
     }
 
     // ---------------------------------------------------------
-    // 7. GRANT CUSTOMER ACCESS
+    // 7. VERIFY INVITED CLIENT EMAIL
+    // ---------------------------------------------------------
+
+    const {
+      data: connection,
+      error: connectionError,
+    } = await supabase
+      .from("reden_connections")
+      .select("user_email")
+      .eq("id", invite.connection_id)
+      .maybeSingle();
+
+    if (connectionError) {
+      console.error("[REDEN INVITE] Client identity lookup failed:", connectionError);
+      return NextResponse.json(
+        { ok: false, error: "Unable to verify the invited client." },
+        { status: 500 }
+      );
+    }
+
+    const invitedEmail = connection?.user_email?.trim().toLowerCase() || "";
+    if (!invitedEmail || invitedEmail !== email) {
+      return NextResponse.json(
+        {
+          ok: false,
+          error: "Sign in with the email address that received this invitation.",
+        },
+        { status: 403 }
+      );
+    }
+
+    // ---------------------------------------------------------
+    // 8. GRANT CUSTOMER ACCESS
     // ---------------------------------------------------------
 
     const {
@@ -819,7 +851,7 @@ export async function PATCH(req: Request) {
     }
 
     // ---------------------------------------------------------
-    // 8. MARK INVITE ACCEPTED
+    // 9. MARK INVITE ACCEPTED
     // ---------------------------------------------------------
 
     const {
@@ -882,7 +914,7 @@ export async function PATCH(req: Request) {
     }
 
     // ---------------------------------------------------------
-    // 9. SUCCESS
+    // 10. SUCCESS
     // ---------------------------------------------------------
 
     return NextResponse.json({
