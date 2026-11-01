@@ -55,8 +55,7 @@ type VerifyResponse = {
 
 type InviteResponse = {
   ok?: boolean;
-  inviteUrl?: string;
-  url?: string;
+  sent?: boolean;
   error?: string;
 };
 
@@ -384,7 +383,7 @@ export default function RedenDeveloperPage() {
     useState(false);
 
   const [connected, setConnected] = useState(false);
-  const [inviteUrl, setInviteUrl] = useState("");
+  const [inviteSent, setInviteSent] = useState(false);
 
   const [copied, setCopied] = useState("");
   const [showKey, setShowKey] = useState(false);
@@ -531,7 +530,7 @@ export default function RedenDeveloperPage() {
     setSelectedStore(store);
     setInstallation(null);
     setConnected(store.status === "active");
-    setInviteUrl("");
+    setInviteSent(false);
     setError("");
     setShowKey(false);
     setOpenEvent(null);
@@ -763,7 +762,7 @@ export default function RedenDeveloperPage() {
       setStoreName("");
       setClientEmail("");
       setConnected(createdStore.status === "active");
-      setInviteUrl("");
+      setInviteSent(false);
       setShowKey(false);
       setOpenEvent(null);
     } catch (err) {
@@ -882,61 +881,32 @@ export default function RedenDeveloperPage() {
 
   const createInvite = async () => {
     if (!installation?.connectionId) {
-      setError(
-        "Select a valid storefront before creating an invite."
-      );
+      setError("Select a valid storefront before sending access.");
       return;
     }
-
+    if (!connected) {
+      setError("Confirm the storefront connection before sending access.");
+      return;
+    }
     setCreatingInvite(true);
     setError("");
-
     try {
-      const response = await fetch(
-        "/api/reden/invites",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Accept: "application/json",
-          },
-          body: JSON.stringify({
-            connectionId: installation.connectionId,
-          }),
-          cache: "no-store",
-        }
-      );
-
-      const data: InviteResponse =
-        await response.json().catch(() => ({}));
-
-      if (!response.ok) {
-        throw new Error(
-          data?.error ||
-            "Unable to create the invitation."
-        );
+      const response = await fetch("/api/reden/invites", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+        },
+        body: JSON.stringify({ connectionId: installation.connectionId }),
+        cache: "no-store",
+      });
+      const data: InviteResponse = await response.json().catch(() => ({}));
+      if (!response.ok || !data?.ok || !data?.sent) {
+        throw new Error(data?.error || "Unable to email the client access link.");
       }
-
-      const url =
-        typeof data?.inviteUrl === "string"
-          ? data.inviteUrl
-          : typeof data?.url === "string"
-            ? data.url
-            : "";
-
-      if (!url) {
-        throw new Error(
-          "REDEN did not return an invitation link."
-        );
-      }
-
-      setInviteUrl(url);
+      setInviteSent(true);
     } catch (err) {
-      setError(
-        err instanceof Error
-          ? err.message
-          : "Unable to create the invitation."
-      );
+      setError(err instanceof Error ? err.message : "Unable to email the client access link.");
     } finally {
       setCreatingInvite(false);
     }
@@ -977,9 +947,15 @@ export default function RedenDeveloperPage() {
   }, [installation]);
 
   const trackingPrompt = useMemo(() => {
-    return `Add REDEN event tracking to this storefront.
+    return `Integrate REDEN into this storefront using the exact SDK installation script below, then add the event tracking described here.
 
-REDEN is already loaded globally via its SDK script, so window.Reden is available and exposes:
+SDK INSTALLATION — INCLUDE THIS COMPLETE SCRIPT ONCE IN THE GLOBAL LAYOUT
+
+${sdkCode}
+
+Place the script in the storefront's shared/global layout so it loads on the pages where products, cart, checkout, and order confirmation are available. Do not split the tag into separate fragments, rewrite its attributes, expose it in customer-facing page content, or install it more than once.
+
+After the script loads, window.Reden is available and exposes:
 
 window.Reden.track(eventName, payload)
 
@@ -1048,7 +1024,7 @@ After implementation, show me:
 4. Where CHECKOUT_STARTED was added.
 5. Where PURCHASE was added.
 6. How duplicate PURCHASE events are prevented.`;
-  }, []);
+  }, [sdkCode]);
 
   const maskedKey = installation?.apiKey
     ? `${installation.apiKey.slice(0, 7)}${"•".repeat(28)}`
@@ -1058,7 +1034,7 @@ After implementation, show me:
     setSelectedStore(null);
     setInstallation(null);
     setConnected(false);
-    setInviteUrl("");
+    setInviteSent(false);
     setError("");
     setShowKey(false);
     setOpenEvent(null);
@@ -1353,7 +1329,7 @@ After implementation, show me:
                   index === 0 ||
                   Boolean(installation) ||
                   (index >= 3 && connected) ||
-                  (index === 4 && Boolean(inviteUrl));
+                  (index === 4 && inviteSent);
 
                 return (
                   <div
@@ -1972,7 +1948,7 @@ After implementation, show me:
                 </div>
 
                 <div className="p-5 md:p-6">
-                  {!inviteUrl ? (
+                  {!inviteSent ? (
                     <>
                       <div className="flex items-start gap-3.5">
                         <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-white/[0.07] bg-white/[0.02] text-[#7c756e]">
@@ -2004,11 +1980,11 @@ After implementation, show me:
                         {creatingInvite ? (
                           <>
                             <Loader2 className="h-3 w-3 animate-spin" />
-                            CREATING
+                            SENDING
                           </>
                         ) : (
                           <>
-                            CREATE INVITATION
+                            SEND LINK
                             <ArrowRight className="h-3 w-3" />
                           </>
                         )}
@@ -2016,40 +1992,15 @@ After implementation, show me:
                     </>
                   ) : (
                     <motion.div
-                      initial={{
-                        opacity: 0,
-                        y: 5,
-                      }}
-                      animate={{
-                        opacity: 1,
-                        y: 0,
-                      }}
+                      initial={{ opacity: 0, y: 5 }}
+                      animate={{ opacity: 1, y: 0 }}
                     >
                       <div className="flex items-center gap-2 text-[9px] tracking-[0.1em] text-[#72b77b]">
                         <Check className="h-3 w-3" />
-                        INVITATION READY
+                        ACCESS LINK SENT
                       </div>
-
-                      <div className="mt-4 flex items-center gap-3 rounded-xl border border-white/[0.07] bg-black/25 px-4 py-3">
-                        <code className="min-w-0 flex-1 truncate text-[9px] text-[#9c958e]">
-                          {inviteUrl}
-                        </code>
-
-                        <CopyButton
-                          value={inviteUrl}
-                          copied={copied === "invite"}
-                          onCopy={() =>
-                            void copy(
-                              inviteUrl,
-                              "invite"
-                            )
-                          }
-                        />
-                      </div>
-
-                      <p className="mt-3 text-[9px] leading-5 text-[#57514c]">
-                        Send this invitation through your
-                        normal client handoff process.
+                      <p className="mt-3 text-[9px] leading-5 text-[#8b837c]">
+                        The client access email has been sent. The client must verify their email before REDEN access is granted.
                       </p>
                     </motion.div>
                   )}

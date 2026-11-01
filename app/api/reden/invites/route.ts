@@ -4,6 +4,7 @@ import crypto from "crypto";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { createClient as createSupabaseClient } from "@supabase/supabase-js";
+import { Resend } from "resend";
 
 export const dynamic = "force-dynamic";
 
@@ -180,6 +181,21 @@ export async function POST(req: Request) {
       );
     }
 
+    const clientEmail = connection.user_email?.trim().toLowerCase() || "";
+    if (!clientEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(clientEmail)) {
+      return NextResponse.json(
+        { ok: false, error: "This storefront does not have a valid client email address." },
+        { status: 400 }
+      );
+    }
+
+    if (!["active", "connected"].includes((connection.status || "").toLowerCase())) {
+      return NextResponse.json(
+        { ok: false, error: "Confirm the storefront is connected before sending the access link." },
+        { status: 409 }
+      );
+    }
+
     /*
      * Generate a cryptographically secure token.
      *
@@ -281,29 +297,62 @@ export async function POST(req: Request) {
      */
     const origin = new URL(req.url).origin;
 
-    const inviteUrl =
-      `${origin}/invites/${token}`;
+    const inviteUrl = origin + "/invites/" + token;
 
-    return NextResponse.json({
-      ok: true,
+    const resendApiKey = process.env.RESEND_API_KEY;
+    if (!resendApiKey) {
+      await supabase.from("store_invites")
+        .update({ expires_at: new Date().toISOString() })
+        .eq("id", invite.id);
+      return NextResponse.json(
+        { ok: false, error: "Email delivery is not configured. Please contact support." },
+        { status: 503 }
+      );
+    }
 
-      // The developer dashboard reads inviteUrl from the top level.
-      inviteUrl,
-      url: inviteUrl,
+    const htmlEscapes: Record<string, string> = {
+      "&": "&amp;",
+      "<": "&lt;",
+      ">": "&gt;",
+      '"': "&quot;",
+      "'": "&#39;",
+    };
+    const escapeHtml = (value: string) =>
+      value.replace(/[&<>"']/g, (character) => htmlEscapes[character] || character);
 
-      invite: {
-        id: invite.id,
-        url: inviteUrl,
-        expiresAt: invite.expires_at,
-        createdAt: invite.created_at,
-      },
-
-      connection: {
-        id: connection.id,
-        siteId: connection.site_id,
-        storeName: connection.store_name,
-      },
+    const storeName = connection.store_name?.trim() || "your storefront";
+    const safeStoreName = escapeHtml(storeName);
+    const resend = new Resend(resendApiKey);
+    const { error: emailError } = await resend.emails.send({
+      from: process.env.PRETHIM_EMAIL_FROM || "PRETHIM <noreply@dcore.name.ng>",
+      to: [clientEmail],
+      subject: "Your REDEN access for " + storeName,
+      text: [
+        "You have been invited to access REDEN.",
+        "",
+        "Storefront: " + storeName,
+        "",
+        "Open the secure link below to continue. You will need to verify your email before access is granted.",
+        inviteUrl,
+        "",
+        "If you were not expecting this invitation, you can ignore this email.",
+      ].join("\n"),
+      html: '<div style="margin:0;background:#090806;padding:36px 16px;font-family:Arial,Helvetica,sans-serif;color:#e9e1d8"><div style="max-width:560px;margin:0 auto;border:1px solid #30271f;background:#100d0a;padding:32px"><p style="font-size:11px;letter-spacing:3px;color:#c97c3e;font-weight:700">REDEN</p><h1 style="font-size:25px;line-height:1.3;font-weight:600">You have been invited.</h1><p style="font-size:14px;line-height:1.8;color:#b9aea2">You have been invited to access REDEN for <strong>' + safeStoreName + '</strong>.</p><p style="font-size:14px;line-height:1.8;color:#b9aea2">Open the secure link below to continue. You must verify your email before REDEN access is granted.</p><p style="margin:28px 0"><a href="' + inviteUrl + '" style="display:inline-block;background:#c97c3e;color:#140d08;text-decoration:none;font-size:12px;font-weight:700;padding:14px 20px">CONTINUE TO REDEN</a></p><p style="font-size:11px;line-height:1.7;color:#766b60">If the button does not work, copy this URL into your browser:<br><span style="overflow-wrap:anywhere">' + inviteUrl + '</span></p><p style="margin-top:28px;border-top:1px solid #30271f;padding-top:18px;font-size:11px;color:#766b60">If you were not expecting this invitation, you can ignore this email.</p></div></div>',
     });
+
+    if (emailError) {
+      console.error("[REDEN INVITE] Access email failed:", emailError);
+      await supabase.from("store_invites")
+        .update({ expires_at: new Date().toISOString() })
+        .eq("id", invite.id);
+      return NextResponse.json(
+        { ok: false, error: "The client access email could not be sent. Please try again." },
+        { status: 502 }
+      );
+    }
+
+    // Never return the access URL to the developer dashboard.
+    return NextResponse.json({ ok: true, sent: true });
   } catch (error) {
     console.error(
       "[REDEN INVITE] Unexpected error:",
@@ -720,7 +769,39 @@ export async function PATCH(req: Request) {
     }
 
     // ---------------------------------------------------------
-    // 7. GRANT CUSTOMER ACCESS
+    // 7. VERIFY INVITED CLIENT EMAIL
+    // ---------------------------------------------------------
+
+    const {
+      data: connection,
+      error: connectionError,
+    } = await supabase
+      .from("reden_connections")
+      .select("user_email")
+      .eq("id", invite.connection_id)
+      .maybeSingle();
+
+    if (connectionError) {
+      console.error("[REDEN INVITE] Client identity lookup failed:", connectionError);
+      return NextResponse.json(
+        { ok: false, error: "Unable to verify the invited client." },
+        { status: 500 }
+      );
+    }
+
+    const invitedEmail = connection?.user_email?.trim().toLowerCase() || "";
+    if (!invitedEmail || invitedEmail !== email) {
+      return NextResponse.json(
+        {
+          ok: false,
+          error: "Sign in with the email address that received this invitation.",
+        },
+        { status: 403 }
+      );
+    }
+
+    // ---------------------------------------------------------
+    // 8. GRANT CUSTOMER ACCESS
     // ---------------------------------------------------------
 
     const {
@@ -770,7 +851,7 @@ export async function PATCH(req: Request) {
     }
 
     // ---------------------------------------------------------
-    // 8. MARK INVITE ACCEPTED
+    // 9. MARK INVITE ACCEPTED
     // ---------------------------------------------------------
 
     const {
@@ -833,7 +914,7 @@ export async function PATCH(req: Request) {
     }
 
     // ---------------------------------------------------------
-    // 9. SUCCESS
+    // 10. SUCCESS
     // ---------------------------------------------------------
 
     return NextResponse.json({
