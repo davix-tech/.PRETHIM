@@ -530,7 +530,7 @@ export default function RedenDeveloperPage() {
     setSelectedStore(store);
     setInstallation(null);
     setConnected(store.status === "active");
-    setInviteUrl("");
+    setInviteSent("");
     setError("");
     setShowKey(false);
     setOpenEvent(null);
@@ -762,7 +762,7 @@ export default function RedenDeveloperPage() {
       setStoreName("");
       setClientEmail("");
       setConnected(createdStore.status === "active");
-      setInviteUrl("");
+      setInviteSent("");
       setShowKey(false);
       setOpenEvent(null);
     } catch (err) {
