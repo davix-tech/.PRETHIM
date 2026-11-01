@@ -310,10 +310,15 @@ export async function POST(req: Request) {
       );
     }
 
+    const htmlEscapes: Record<string, string> = {
+      "&": "&amp;",
+      "<": "&lt;",
+      ">": "&gt;",
+      '"': "&quot;",
+      "'": "&#39;",
+    };
     const escapeHtml = (value: string) =>
-      value.replace(/[&<>"']/g, (character) => ({
-        "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;",
-      })[character] || character);
+      value.replace(/[&<>"']/g, (character) => htmlEscapes[character] || character);
 
     const storeName = connection.store_name?.trim() || "your storefront";
     const safeStoreName = escapeHtml(storeName);
