@@ -1,7 +1,7 @@
 "use client";
 
 import { useParams } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { signIn, useSession } from "next-auth/react";
 import {
   ArrowRight,
@@ -31,6 +31,7 @@ export default function InvitePage() {
   const [invite, setInvite] = useState<Invite | null>(null);
   const [loading, setLoading] = useState(true);
   const [accepting, setAccepting] = useState(false);
+  const acceptingRef = useRef(false);
   const [error, setError] = useState("");
   const [accepted, setAccepted] = useState(false);
 
@@ -90,20 +91,25 @@ export default function InvitePage() {
       sessionStatus !== "authenticated" ||
       !session?.user?.email ||
       accepted ||
-      accepting
+      acceptingRef.current
     ) {
       return;
     }
 
     async function acceptInvite() {
+      if (acceptingRef.current) return;
+      acceptingRef.current = true;
+      setAccepting(true);
+      const controller = new AbortController();
+      const timeoutId = window.setTimeout(() => controller.abort(), 20000);
       try {
-        setAccepting(true);
         setError("");
 
         const response = await fetch(
           "/api/reden/invites",
           {
             method: "PATCH",
+            signal: controller.signal,
             headers: {
               "Content-Type": "application/json",
               Accept: "application/json",
@@ -140,6 +146,8 @@ export default function InvitePage() {
             : "Unable to accept invitation."
         );
       } finally {
+        window.clearTimeout(timeoutId);
+        acceptingRef.current = false;
         setAccepting(false);
       }
     }
@@ -150,7 +158,6 @@ export default function InvitePage() {
     sessionStatus,
     session?.user?.email,
     accepted,
-    accepting,
     token,
   ]);
 
