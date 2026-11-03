@@ -326,18 +326,25 @@ export async function POST(req: Request) {
     const { error: emailError } = await resend.emails.send({
       from: process.env.PRETHIM_EMAIL_FROM?.trim() || "PRETHIM <noreply@prethim.name.ng>",
       to: [clientEmail],
-      subject: "Your REDEN access for " + storeName,
+      subject: "Your store has been invited to REDEN",
       text: [
-        "You have been invited to access REDEN.",
+        "Your store has been invited to REDEN.",
         "",
         "Storefront: " + storeName,
         "",
-        "Open the secure link below to continue. You will need to verify your email before access is granted.",
-        inviteUrl,
+        "REDEN helps ecommerce businesses identify buying intent, recover abandoned carts, use relevant incentives when shoppers show low purchase intent, and understand revenue opportunities.",
+        "",
+        "You will also receive concise store intelligence reports twice daily.",
+        "",
+        "REDEN works alongside your existing ecommerce store. You do not need to replace your website or storefront platform.",
+        "",
+        "Review your invitation: " + inviteUrl,
+        "",
+        "For security, access is granted after a one-time code is sent to and verified against the store owner's registered email address.",
         "",
         "If you were not expecting this invitation, you can ignore this email.",
       ].join("\n"),
-      html: '<div style="margin:0;background:#090806;padding:36px 16px;font-family:Arial,Helvetica,sans-serif;color:#e9e1d8"><div style="max-width:560px;margin:0 auto;border:1px solid #30271f;background:#100d0a;padding:32px"><p style="font-size:11px;letter-spacing:3px;color:#c97c3e;font-weight:700">REDEN</p><h1 style="font-size:25px;line-height:1.3;font-weight:600">You have been invited.</h1><p style="font-size:14px;line-height:1.8;color:#b9aea2">You have been invited to access REDEN for <strong>' + safeStoreName + '</strong>.</p><p style="font-size:14px;line-height:1.8;color:#b9aea2">Open the secure link below to continue. You must verify your email before REDEN access is granted.</p><p style="margin:28px 0"><a href="' + inviteUrl + '" style="display:inline-block;background:#c97c3e;color:#140d08;text-decoration:none;font-size:12px;font-weight:700;padding:14px 20px">CONTINUE TO REDEN</a></p><p style="font-size:11px;line-height:1.7;color:#766b60">If the button does not work, copy this URL into your browser:<br><span style="overflow-wrap:anywhere">' + inviteUrl + '</span></p><p style="margin-top:28px;border-top:1px solid #30271f;padding-top:18px;font-size:11px;color:#766b60">If you were not expecting this invitation, you can ignore this email.</p></div></div>',
+      html: '<div style="margin:0;background:#090806;padding:36px 16px;font-family:Arial,Helvetica,sans-serif;color:#e9e1d8"><div style="max-width:560px;margin:0 auto;border:1px solid #30271f;background:#100d0a;padding:32px"><p style="font-size:11px;letter-spacing:3px;color:#c97c3e;font-weight:700">REDEN</p><h1 style="font-size:25px;line-height:1.3;font-weight:600">Your store has been invited.</h1><p style="font-size:14px;line-height:1.8;color:#b9aea2">REDEN helps <strong>' + safeStoreName + '</strong> identify buying intent, recover abandoned carts, apply relevant incentives when appropriate, and understand revenue opportunities.</p><p style="font-size:14px;line-height:1.8;color:#b9aea2">You also receive concise store intelligence reports twice daily. REDEN works alongside your existing ecommerce store — no platform replacement required.</p><p style="margin:28px 0"><a href="' + inviteUrl + '" style="display:inline-block;background:#c97c3e;color:#140d08;text-decoration:none;font-size:12px;font-weight:700;padding:14px 20px">REVIEW YOUR INVITATION</a></p><p style="font-size:11px;line-height:1.7;color:#766b60">For security, access is granted after a one-time code is sent to and verified against the store owner's registered email address.</p><p style="margin-top:28px;border-top:1px solid #30271f;padding-top:18px;font-size:11px;color:#766b60">If you were not expecting this invitation, you can ignore this email.</p></div></div>',
     });
 
     if (emailError) {
