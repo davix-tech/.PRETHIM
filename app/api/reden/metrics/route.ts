@@ -1,7 +1,4 @@
 import { NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-
-import { authOptions } from "@/lib/auth";
 import { getActiveConnection } from "@/lib/reden/connection";
 import { getAuthenticatedEmail } from "@/lib/authenticated-email";
 import {
@@ -119,8 +116,7 @@ export async function GET(req: Request) {
        1. AUTHENTICATE
     ===================================================== */
 
-    const session = await getServerSession(authOptions);
-    const ownerEmail = session?.user?.email?.trim().toLowerCase();
+    const ownerEmail = await getAuthenticatedEmail();
 
     if (!ownerEmail) {
       return jsonError("unauthorized", 401);
