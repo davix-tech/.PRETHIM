@@ -324,7 +324,7 @@ export async function POST(req: Request) {
     const safeStoreName = escapeHtml(storeName);
     const resend = new Resend(resendApiKey);
     const { error: emailError } = await resend.emails.send({
-      from: process.env.PRETHIM_EMAIL_FROM || "PRETHIM <noreply@dcore.name.ng>",
+      from: process.env.PRETHIM_EMAIL_FROM?.trim() || "PRETHIM <noreply@prethim.name.ng>",
       to: [clientEmail],
       subject: "Your REDEN access for " + storeName,
       text: [
