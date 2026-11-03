@@ -1,13 +1,14 @@
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { createClient as createSupabaseServerClient } from "@/lib/supabase/server";
+import { getRedenInviteSession } from "@/lib/reden-invite-session";
 
 /**
  * Resolve a verified PRETHIM identity across both supported sign-in
  * methods: NextAuth (Google) and Supabase Auth (email magic link).
  * Never accept an email address supplied by the browser as identity.
  */
-export async function getAuthenticatedEmail(): Promise<string | null> {
+export async function getAuthenticatedEmail(): Promise<string | null> {\n  const inviteSession = getRedenInviteSession();\n  if (inviteSession?.email) return inviteSession.email;
   try {
     const session = await getServerSession(authOptions);
     const nextAuthEmail = session?.user?.email?.trim().toLowerCase();
