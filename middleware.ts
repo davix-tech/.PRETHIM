@@ -14,7 +14,7 @@ async function hasValidRedenInviteSession(request: NextRequest) {
     );
     const signature = await crypto.subtle.sign("HMAC", key, new TextEncoder().encode(payload));
     const expected = btoa(String.fromCharCode(...new Uint8Array(signature)))
-      .replace(/=/g, "").replace(/\\+/g, "-").replace(/\\//g, "_");
+      .replace(/=/g, "").replace(/\+/g, "-").replace(/\//g, "_");
     if (expected !== supplied) return false;
     const normalized = payload.replace(/-/g, "+").replace(/_/g, "/");
     const data = JSON.parse(atob(normalized + "=".repeat((4 - normalized.length % 4) % 4)));
