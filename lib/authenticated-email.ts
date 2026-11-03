@@ -8,7 +8,9 @@ import { getRedenInviteSession } from "@/lib/reden-invite-session";
  * methods: NextAuth (Google) and Supabase Auth (email magic link).
  * Never accept an email address supplied by the browser as identity.
  */
-export async function getAuthenticatedEmail(): Promise<string | null> {\n  const inviteSession = getRedenInviteSession();\n  if (inviteSession?.email) return inviteSession.email;
+export async function getAuthenticatedEmail(): Promise<string | null> {
+  const inviteSession = getRedenInviteSession();
+  if (inviteSession?.email) return inviteSession.email;
   try {
     const session = await getServerSession(authOptions);
     const nextAuthEmail = session?.user?.email?.trim().toLowerCase();
