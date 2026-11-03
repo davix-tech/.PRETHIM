@@ -26,7 +26,12 @@ async function hasValidRedenInviteSession(request: NextRequest) {
 }
 
 export async function middleware(request: NextRequest) {
-  // Accept a verified REDEN store-owner email identity first.\n  if (await hasValidRedenInviteSession(request)) {\n    return NextResponse.next();\n  }\n\n  // Accept a valid NextAuth JWT (Google sign-in).
+  // Accept a verified REDEN store-owner email identity first.
+  if (await hasValidRedenInviteSession(request)) {
+    return NextResponse.next();
+  }
+
+  // Accept a valid NextAuth JWT (Google sign-in).
   try {
     const token = await getToken({
       req: request,
