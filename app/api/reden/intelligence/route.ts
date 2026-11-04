@@ -23,6 +23,7 @@ const MAX_QUESTION_LENGTH = 2_000;
 type RequestBody = {
   question?: unknown;
   siteId?: unknown;
+  conversationId?: unknown;
 };
 
 type IntelligenceResponse = {
@@ -353,6 +354,18 @@ export async function POST(
         ? payload.siteId.trim()
         : "";
 
+    const conversationId =
+      typeof payload.conversationId === "string"
+        ? payload.conversationId.trim()
+        : "";
+
+    if (
+      conversationId &&
+      !/^[a-zA-Z0-9_-]{8,100}$/.test(conversationId)
+    ) {
+      return jsonError("invalid_conversation_id", 400);
+    }
+
     if (
       requestedSiteId &&
       !isValidSiteId(
@@ -420,6 +433,7 @@ export async function POST(
             body: JSON.stringify({
               siteId,
               question,
+              ...(conversationId ? { conversationId } : {}),
             }),
 
             cache: "no-store",
