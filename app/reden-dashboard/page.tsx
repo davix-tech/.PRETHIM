@@ -184,7 +184,7 @@ export default function RedenDashboardPage() {
 
       setMetricsError(message);
     } finally {
-      setMetricsLoading(false);
+      if (showLoading) setMetricsLoading(false);
     }
   }, []);
 
