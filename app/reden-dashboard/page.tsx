@@ -152,8 +152,11 @@ export default function RedenDashboardPage() {
   const [metricsError, setMetricsError] = useState<string | null>(null);
   const [, setMetricsUpdatedAt] = useState<string | null>(null);
 
-  const fetchMetrics = useCallback(async (resolvedSiteId: string) => {
-    setMetricsLoading(true);
+  const fetchMetrics = useCallback(async (
+    resolvedSiteId: string,
+    showLoading = true
+  ) => {
+    if (showLoading) setMetricsLoading(true);
     setMetricsError(null);
 
     try {
@@ -181,7 +184,7 @@ export default function RedenDashboardPage() {
 
       setMetricsError(message);
     } finally {
-      setMetricsLoading(false);
+      if (showLoading) setMetricsLoading(false);
     }
   }, []);
 
@@ -231,6 +234,95 @@ export default function RedenDashboardPage() {
       cancelled = true;
     };
   }, [fetchMetrics]);
+
+  /* -------------------------------------------------------
+     LIVE COMMERCE UPDATES
+  ------------------------------------------------------- */
+
+  useEffect(() => {
+    if (!siteId) return;
+
+    let disposed = false;
+    let source: EventSource | null = null;
+    let reconnectTimer: number | null = null;
+    let refreshTimer: number | null = null;
+    let reconnectDelay = 1_000;
+
+    const scheduleReconnect = () => {
+      if (disposed || reconnectTimer !== null) return;
+
+      reconnectTimer = window.setTimeout(() => {
+        reconnectTimer = null;
+        void connect();
+      }, reconnectDelay);
+
+      reconnectDelay = Math.min(reconnectDelay * 2, 15_000);
+    };
+
+    const connect = async () => {
+      try {
+        const ticketResponse = await fetch("/api/reden/stream-token", {
+          cache: "no-store",
+        });
+        const ticket = await ticketResponse.json();
+
+        if (
+          disposed ||
+          !ticketResponse.ok ||
+          !ticket.ok ||
+          typeof ticket.streamUrl !== "string"
+        ) {
+          throw new Error(ticket.error || "Live updates are unavailable.");
+        }
+
+        source?.close();
+        source = new EventSource(ticket.streamUrl);
+
+        source.onopen = () => {
+          reconnectDelay = 1_000;
+          // Reconcile after every connection/reconnection so a
+          // dropped stream never leaves the dashboard stale.
+          void fetchMetrics(siteId, false);
+        };
+
+        source.onmessage = () => {
+          if (refreshTimer !== null) {
+            window.clearTimeout(refreshTimer);
+          }
+
+          // Collapse bursts of SDK events into one authoritative
+          // metrics read instead of issuing a request per event.
+          refreshTimer = window.setTimeout(() => {
+            refreshTimer = null;
+            void fetchMetrics(siteId, false);
+          }, 300);
+        };
+
+        source.onerror = () => {
+          source?.close();
+          source = null;
+          scheduleReconnect();
+        };
+      } catch {
+        scheduleReconnect();
+      }
+    };
+
+    void connect();
+
+    return () => {
+      disposed = true;
+      source?.close();
+
+      if (reconnectTimer !== null) {
+        window.clearTimeout(reconnectTimer);
+      }
+
+      if (refreshTimer !== null) {
+        window.clearTimeout(refreshTimer);
+      }
+    };
+  }, [siteId, fetchMetrics]);
 
   /* -------------------------------------------------------
      CHAT
