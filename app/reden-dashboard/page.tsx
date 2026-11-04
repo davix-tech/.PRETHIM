@@ -6,6 +6,7 @@ import {
   FormEvent,
   useCallback,
   useEffect,
+  useRef,
   useState,
 } from "react";
 import {
@@ -130,6 +131,7 @@ export default function RedenDashboardPage() {
   const [input, setInput] = useState("");
   const [messages, setMessages] = useState<Message[]>([]);
   const [isThinking, setIsThinking] = useState(false);
+  const conversationIdRef = useRef<string | null>(null);
 
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
@@ -251,12 +253,20 @@ export default function RedenDashboardPage() {
     setInput("");
     setIsThinking(true);
 
+    if (!conversationIdRef.current) {
+      conversationIdRef.current =
+        typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
+          ? crypto.randomUUID()
+          : `reden-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+    }
+
     try {
       const response = await fetch("/api/reden/intelligence", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           question,
+          conversationId: conversationIdRef.current,
           ...(siteId ? { siteId } : {}),
         }),
         cache: "no-store",
