@@ -1149,7 +1149,7 @@ function Intelligence({
               </div>
             ) : (
               <div className="mx-auto w-full max-w-[760px] space-y-10">
-                {!isOnline && <div className="rounded-xl border border-white/[0.07] bg-white/[0.025] px-4 py-3 text-[11px] leading-5 text-white/45">You're offline. REDEN will be available again when your connection returns.</div>}
+                {!isOnline && <div className="rounded-xl border border-white/[0.07] bg-white/[0.025] px-4 py-3 text-[11px] leading-5 text-white/45">You&apos;re offline. REDEN will be available again when your connection returns.</div>}
                 {messages.map((message) => <div key={message.id}>{message.role === "user" ? <div className="flex justify-end"><div className="max-w-[88%] rounded-2xl bg-white/[0.07] px-4 py-3 text-[13px] leading-6 text-white/80 md:max-w-[78%]">{message.content}</div></div> : <div className="max-w-[760px]"><RichAnswer content={message.content} /></div>}</div>)}
                 {isThinking && <div className="flex items-center gap-2 py-1 text-[11px] text-white/30"><span className="h-1 w-1 animate-pulse rounded-full bg-[#C97C3E]/70" />Reviewing your question…</div>}
                 {requestError && <div role="status" className="max-w-[760px] rounded-xl border border-white/[0.07] bg-white/[0.025] px-4 py-3 text-[11px] leading-6 text-white/45">{requestError}</div>}
