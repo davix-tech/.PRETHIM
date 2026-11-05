@@ -417,6 +417,8 @@ export default function RedenDashboardPage() {
       const code = error instanceof Error ? error.message : "";
       const message = !navigator.onLine
         ? "Your connection dropped before REDEN could finish. Your question is still here; reconnect and send it again."
+        : /failed to fetch|networkerror|load failed/i.test(code)
+        ? "I couldn't reach REDEN just now. Your question wasn't analysed; check your connection and try again."
         : code === "AUTH_REQUIRED"
         ? "Your session needs to be refreshed. Sign in again, then retry your question."
         : code === "STORE_NOT_CONNECTED"
