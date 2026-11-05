@@ -140,6 +140,7 @@ export default function RedenDashboardPage() {
   const [conversations, setConversations] = useState<ConversationHistory[]>([]);
   const [activeConversationId, setActiveConversationId] = useState<string | null>(null);
   const [historyOpen, setHistoryOpen] = useState(false);
+  const [historySiteId, setHistorySiteId] = useState<string | null>(null);
   const [isThinking, setIsThinking] = useState(false);
   const [requestError, setRequestError] = useState<string | null>(null);
   const [isOnline, setIsOnline] = useState(true);
@@ -171,23 +172,24 @@ export default function RedenDashboardPage() {
     if (!siteId) return;
     try {
       const stored = window.localStorage.getItem(`reden-chat-history:${siteId}`);
-      if (!stored) return;
-      const parsed = JSON.parse(stored) as ConversationHistory[];
-      if (!Array.isArray(parsed)) return;
-      setConversations(parsed.filter((item) => item && typeof item.id === "string" && Array.isArray(item.messages)).slice(0, 30));
+      const parsed = stored ? (JSON.parse(stored) as ConversationHistory[]) : [];
+      setConversations(Array.isArray(parsed) ? parsed.filter((item) => item && typeof item.id === "string" && Array.isArray(item.messages)).slice(0, 30) : []);
     } catch {
       // Local history is optional; storage failure must not block chat.
+      setConversations([]);
+    } finally {
+      setHistorySiteId(siteId);
     }
   }, [siteId]);
 
   useEffect(() => {
-    if (!siteId || conversations.length === 0) return;
+    if (!siteId || historySiteId !== siteId) return;
     try {
       window.localStorage.setItem(`reden-chat-history:${siteId}`, JSON.stringify(conversations.slice(0, 30)));
     } catch {
       // Storage can be unavailable or full. Live chat remains usable.
     }
-  }, [siteId, conversations]);
+  }, [siteId, historySiteId, conversations]);
 
   useEffect(() => {
     if (!activeConversationId || messages.length === 0) return;
@@ -407,7 +409,8 @@ export default function RedenDashboardPage() {
     }
 
     setRequestError(null);
-    setMessages((current) => [...current, userMessage]);
+    const isRetry = messages[messages.length - 1]?.role === "user" && messages[messages.length - 1]?.content === question;
+    if (!isRetry) setMessages((current) => [...current, userMessage]);
     setInput("");
     setIsThinking(true);
 
@@ -1137,6 +1140,7 @@ function Intelligence({
                   <h1 className="text-[34px] font-medium leading-[1.08] tracking-[-0.055em] text-white/90 md:text-[48px]">What should we<br /><span className="text-white/35">look into today?</span></h1>
                   <p className="mt-4 max-w-xl text-[13px] leading-6 text-white/35">Ask a direct question about your store. REDEN separates observed facts from interpretation and identifies where the available evidence has limits.</p>
                   <div className="mt-7 grid gap-2 sm:grid-cols-2">{SUGGESTIONS.map((suggestion) => <button key={suggestion} type="button" onClick={() => onSuggestion(suggestion)} className="rounded-xl border border-white/[0.08] bg-white/[0.025] px-4 py-3 text-left text-[11px] text-white/50 transition hover:border-[#C97C3E]/30 hover:bg-[#C97C3E]/[0.05] hover:text-white/80">{suggestion}</button>)}</div>
+                  {requestError && <div role="status" className="mt-5 rounded-xl border border-white/[0.07] bg-white/[0.025] px-4 py-3 text-[11px] leading-6 text-white/45">{requestError}</div>}
                 </div>
               </div>
             ) : (
