@@ -131,9 +131,23 @@ export default function RedenDashboardPage() {
   const [input, setInput] = useState("");
   const [messages, setMessages] = useState<Message[]>([]);
   const [isThinking, setIsThinking] = useState(false);
+  const [requestError, setRequestError] = useState<string | null>(null);
+  const [isOnline, setIsOnline] = useState(true);
   const conversationIdRef = useRef<string | null>(null);
 
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  useEffect(() => {
+    const updateConnection = () => setIsOnline(navigator.onLine);
+    updateConnection();
+    window.addEventListener("online", updateConnection);
+    window.addEventListener("offline", updateConnection);
+
+    return () => {
+      window.removeEventListener("online", updateConnection);
+      window.removeEventListener("offline", updateConnection);
+    };
+  }, []);
 
   /* -------------------------------------------------------
      SITE RESOLUTION
@@ -177,10 +191,11 @@ export default function RedenDashboardPage() {
       setMetrics(data.metrics);
       setMetricsUpdatedAt(data.generatedAt ?? new Date().toISOString());
     } catch (error) {
-      const message =
-        error instanceof Error
-          ? error.message
-          : "REDEN could not load your business metrics.";
+      const message = !navigator.onLine
+        ? "Your device is offline. Reconnect to refresh your store data."
+        : error instanceof Error && /timeout|timed out/i.test(error.message)
+        ? "REDEN is taking longer than expected to retrieve your store data. Try again shortly."
+        : "REDEN couldn't retrieve your store data right now. Your existing figures have not been replaced.";
 
       setMetricsError(message);
     } finally {
@@ -341,6 +356,13 @@ export default function RedenDashboardPage() {
       content: question,
     };
 
+    if (!navigator.onLine) {
+      setIsOnline(false);
+      setRequestError("You're offline. Reconnect to the internet and send your question again.");
+      return;
+    }
+
+    setRequestError(null);
     setMessages((current) => [...current, userMessage]);
     setInput("");
     setIsThinking(true);
@@ -375,9 +397,11 @@ export default function RedenDashboardPage() {
       }
 
       if (!response.ok || !data.ok || !data.answer) {
-        throw new Error(
-          data.error || "REDEN could not answer the question."
-        );
+        if (response.status === 401) throw new Error("AUTH_REQUIRED");
+        if (response.status === 404) throw new Error("STORE_NOT_CONNECTED");
+        if (response.status === 504 || /timeout/i.test(data.error || "")) throw new Error("REQUEST_TIMEOUT");
+        if (response.status >= 500 || /unavailable|failed/i.test(data.error || "")) throw new Error("SERVICE_UNAVAILABLE");
+        throw new Error("REQUEST_NOT_COMPLETED");
       }
 
       setMessages((current) => [
@@ -390,19 +414,21 @@ export default function RedenDashboardPage() {
       ]);
 
     } catch (error) {
-      const message =
-        error instanceof Error
-          ? error.message
-          : "REDEN could not complete the analysis.";
+      const code = error instanceof Error ? error.message : "";
+      const message = !navigator.onLine
+        ? "Your connection dropped before REDEN could finish. Your question is still here; reconnect and send it again."
+        : code === "AUTH_REQUIRED"
+        ? "Your session needs to be refreshed. Sign in again, then retry your question."
+        : code === "STORE_NOT_CONNECTED"
+        ? "I couldn't find an active store connection. Reconnect your storefront before asking about its activity."
+        : code === "REQUEST_TIMEOUT"
+        ? "This is taking longer than expected. I couldn't complete the analysis, so I haven't drawn a conclusion. Please try again."
+        : code === "SERVICE_UNAVAILABLE"
+        ? "REDEN is temporarily unreachable. Your store data hasn't been analysed for this request. Please try again shortly."
+        : "I couldn't complete that response. No new analysis was produced. Please try again.";
 
-      setMessages((current) => [
-        ...current,
-        {
-          id: Date.now() + 1,
-          role: "reden",
-          content: message,
-        },
-      ]);
+      setInput(question);
+      setRequestError(message);
     } finally {
       setIsThinking(false);
     }
@@ -662,6 +688,8 @@ export default function RedenDashboardPage() {
             setInput={setInput}
             messages={messages}
             isThinking={isThinking}
+            requestError={requestError}
+            isOnline={isOnline}
             hasConversation={hasConversation}
             onSubmit={handleSubmit}
             onSuggestion={askQuestion}
@@ -990,6 +1018,8 @@ function Intelligence({
   setInput,
   messages,
   isThinking,
+  requestError,
+  isOnline,
   hasConversation,
   onSubmit,
   onSuggestion,
@@ -998,6 +1028,8 @@ function Intelligence({
   setInput: (value: string) => void;
   messages: Message[];
   isThinking: boolean;
+  requestError: string | null;
+  isOnline: boolean;
   hasConversation: boolean;
   onSubmit: (event: FormEvent<HTMLFormElement>) => void;
   onSuggestion: (question: string) => void;
@@ -1006,16 +1038,19 @@ function Intelligence({
     <div className="relative min-h-[calc(100vh-62px)]">
       <div className="mx-auto flex w-full max-w-[960px] items-center justify-between px-5 pb-4 pt-7 md:px-8">
         <div>
-          <div className="text-[9px] uppercase tracking-[0.16em] text-white/25">REDEN / Intelligence</div>
+          <div className="text-[9px] uppercase tracking-[0.16em] text-white/25">Intelligence</div>
           <div className="mt-1 text-[12px] text-white/55">Business analysis, grounded in your store data</div>
+        </div>
+        <div className="flex items-center gap-2 text-[9px] text-white/25">
+          <span className={["h-1.5 w-1.5 rounded-full", isOnline ? "bg-emerald-400/55" : "bg-white/20"].join(" ")} />
+          {isOnline ? "Connected" : "Offline"}
         </div>
       </div>
 
       {!hasConversation ? (
         <div className="mx-auto flex min-h-[calc(100vh-260px)] w-full max-w-[820px] flex-col justify-center px-5 pb-36 pt-8 md:px-8">
           <div className="max-w-2xl">
-            <div className="text-[11px] font-medium uppercase tracking-[0.14em] text-[#C97C3E]/80">REDEN Intelligence</div>
-            <h1 className="mt-4 text-[34px] font-medium leading-[1.08] tracking-[-0.055em] text-white/90 md:text-[48px]">What should we<br /><span className="text-white/35">look into today?</span></h1>
+            <h1 className="text-[34px] font-medium leading-[1.08] tracking-[-0.055em] text-white/90 md:text-[48px]">What should we<br /><span className="text-white/35">look into today?</span></h1>
             <p className="mt-4 max-w-xl text-[13px] leading-6 text-white/35">Ask a direct question about your store. REDEN should separate observed facts from interpretation and be clear when the data cannot support a conclusion.</p>
             <div className="mt-7 flex flex-wrap gap-2">
               {SUGGESTIONS.map((suggestion) => <button key={suggestion} type="button" onClick={() => onSuggestion(suggestion)} className="rounded-full border border-white/[0.08] bg-white/[0.025] px-3.5 py-2.5 text-left text-[10px] text-white/50 transition hover:border-[#C97C3E]/30 hover:bg-[#C97C3E]/[0.05] hover:text-white/80">{suggestion}</button>)}
@@ -1025,17 +1060,33 @@ function Intelligence({
       ) : (
         <div className="mx-auto min-h-[calc(100vh-220px)] w-full max-w-[820px] px-5 pb-48 pt-8 md:px-8">
           <div className="space-y-10">
+            {!isOnline && (
+              <div className="rounded-xl border border-white/[0.07] bg-white/[0.025] px-4 py-3 text-[11px] leading-5 text-white/45">
+                You're offline. REDEN will be available again when your connection returns.
+              </div>
+            )}
             {messages.map((message) => <div key={message.id}>
               {message.role === "user" ? (
                 <div className="flex justify-end"><div className="max-w-[88%] rounded-2xl bg-white/[0.07] px-4 py-3 text-[13px] leading-6 text-white/80 md:max-w-[78%]">{message.content}</div></div>
               ) : (
                 <div className="max-w-[760px]">
-                  <div className="mb-3 text-[10px] font-medium uppercase tracking-[0.14em] text-[#C97C3E]/85">REDEN</div>
-                  <div className="whitespace-pre-wrap text-[13px] leading-7 text-white/75 md:text-[14px]">{message.content}</div>
+                  <div className="whitespace-pre-wrap text-[14px] leading-7 text-white/78 md:text-[15px] md:leading-8">{message.content}</div>
                 </div>
               )}
             </div>)}
-            {isThinking && <div className="max-w-[760px]"><div className="mb-3 text-[10px] font-medium uppercase tracking-[0.14em] text-[#C97C3E]/85">REDEN</div><div className="flex items-center gap-2 text-[12px] text-white/35"><span className="h-1.5 w-1.5 animate-pulse rounded-full bg-[#C97C3E]" />Reviewing available store evidence…</div></div>}
+            {isThinking && (
+              <div className="max-w-[760px] py-1">
+                <div className="flex items-center gap-2 text-[11px] text-white/30">
+                  <span className="h-1 w-1 animate-pulse rounded-full bg-[#C97C3E]/70" />
+                  Looking through the available store context…
+                </div>
+              </div>
+            )}
+            {requestError && (
+              <div role="status" className="max-w-[760px] rounded-xl border border-white/[0.07] bg-white/[0.025] px-4 py-3 text-[11px] leading-6 text-white/45">
+                {requestError}
+              </div>
+            )}
           </div>
         </div>
       )}
@@ -1043,7 +1094,7 @@ function Intelligence({
       <div className="fixed inset-x-0 bottom-[76px] z-30 border-t border-white/[0.06] bg-[#090807]/95 px-4 py-4 backdrop-blur-2xl lg:bottom-0 lg:px-6">
         <div className="mx-auto max-w-[820px]">
           <Composer input={input} setInput={setInput} onSubmit={onSubmit} isThinking={isThinking} />
-          <div className="mt-2 text-center text-[8px] text-white/20">REDEN can only answer from the evidence available to it. Verify important decisions against your store records.</div>
+          <div className="mt-2 text-center text-[8px] text-white/20">Answers are grounded in the store evidence currently available.</div>
         </div>
       </div>
     </div>
