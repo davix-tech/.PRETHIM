@@ -140,6 +140,7 @@ export default function RedenDashboardPage() {
   const [conversations, setConversations] = useState<ConversationHistory[]>([]);
   const [activeConversationId, setActiveConversationId] = useState<string | null>(null);
   const [historyOpen, setHistoryOpen] = useState(false);
+  const [historyCollapsed, setHistoryCollapsed] = useState(false);
   const [historySiteId, setHistorySiteId] = useState<string | null>(null);
   const [isThinking, setIsThinking] = useState(false);
   const [requestError, setRequestError] = useState<string | null>(null);
@@ -768,7 +769,9 @@ export default function RedenDashboardPage() {
             conversations={conversations}
             activeConversationId={activeConversationId}
             historyOpen={historyOpen}
+            historyCollapsed={historyCollapsed}
             onToggleHistory={() => setHistoryOpen((current) => !current)}
+            onToggleCollapsed={() => setHistoryCollapsed((current) => !current)}
             onNewConversation={startNewConversation}
             onSelectConversation={openConversation}
             onSubmit={handleSubmit}
@@ -1095,33 +1098,34 @@ function Decisions() {
 
 function Intelligence({
   input, setInput, messages, isThinking, requestError, isOnline, hasConversation,
-  conversations, activeConversationId, historyOpen, onToggleHistory, onNewConversation,
-  onSelectConversation, onSubmit, onSuggestion,
+  conversations, activeConversationId, historyOpen, historyCollapsed, onToggleHistory,
+  onToggleCollapsed, onNewConversation, onSelectConversation, onSubmit, onSuggestion,
 }: {
   input: string; setInput: (value: string) => void; messages: Message[]; isThinking: boolean;
   requestError: string | null; isOnline: boolean; hasConversation: boolean;
   conversations: ConversationHistory[]; activeConversationId: string | null; historyOpen: boolean;
-  onToggleHistory: () => void; onNewConversation: () => void;
+  historyCollapsed: boolean; onToggleHistory: () => void; onToggleCollapsed: () => void; onNewConversation: () => void;
   onSelectConversation: (conversation: ConversationHistory) => void;
   onSubmit: (event: FormEvent<HTMLFormElement>) => void; onSuggestion: (question: string) => void;
 }) {
   return (
     <div className="relative flex min-h-[calc(100vh-62px)]">
-      <aside className={["fixed inset-y-[62px] left-0 z-40 w-[276px] border-r border-white/[0.07] bg-[#0d0b09] p-4 transition-transform lg:sticky lg:top-[96px] lg:z-10 lg:block lg:h-[calc(100vh-96px)] lg:translate-x-0", historyOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"].join(" ")}>
-        <div className="flex items-center justify-between">
-          <div className="text-[10px] font-medium uppercase tracking-[0.15em] text-white/35">Intelligence</div>
+      <aside className={["fixed inset-y-[62px] left-0 z-40 w-[276px] border-r border-white/[0.07] bg-[#0d0b09] p-4 transition-all duration-200 lg:sticky lg:top-[96px] lg:z-10 lg:block lg:h-[calc(100vh-96px)] lg:translate-x-0", historyCollapsed ? "lg:w-[76px] lg:px-3" : "lg:w-[276px]", historyOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"].join(" ")}>
+        <div className={["flex items-center", historyCollapsed ? "justify-center" : "justify-between"].join(" ")}>
+          {!historyCollapsed && <div className="text-[10px] font-medium uppercase tracking-[0.15em] text-white/35">Intelligence</div>}
+          <button type="button" onClick={onToggleCollapsed} className="hidden rounded-lg p-2 text-white/35 transition hover:bg-white/[0.05] hover:text-white/70 lg:block" aria-label={historyCollapsed ? "Expand conversation sidebar" : "Collapse conversation sidebar"} title={historyCollapsed ? "Expand sidebar" : "Collapse sidebar"}><ChevronRight size={15} className={historyCollapsed ? "" : "rotate-180"} /></button>
           <button type="button" onClick={onToggleHistory} className="rounded-lg p-2 text-white/35 hover:bg-white/[0.05] lg:hidden" aria-label="Close history"><X size={15} /></button>
         </div>
-        <button type="button" onClick={onNewConversation} className="mt-5 flex w-full items-center justify-center gap-2 rounded-xl border border-[#C97C3E]/25 bg-[#C97C3E]/[0.08] px-3 py-3 text-[11px] font-medium text-[#D99A69] transition hover:bg-[#C97C3E]/[0.13]"><span className="text-base leading-none">+</span> New conversation</button>
-        <div className="mt-7 flex items-center justify-between px-1"><span className="text-[9px] uppercase tracking-[0.13em] text-white/25">Recent conversations</span><span className="text-[9px] tabular-nums text-white/20">{conversations.length}</span></div>
+        <button type="button" onClick={onNewConversation} title="New conversation" className={["mt-5 flex w-full items-center justify-center gap-2 rounded-xl border border-[#C97C3E]/25 bg-[#C97C3E]/[0.08] px-3 py-3 text-[11px] font-medium text-[#D99A69] transition hover:bg-[#C97C3E]/[0.13]", historyCollapsed ? "lg:px-0" : ""].join(" ")}><span className="text-base leading-none">+</span>{!historyCollapsed && <span>New conversation</span>}</button>
+        {!historyCollapsed && <div className="mt-7 flex items-center justify-between px-1"><span className="text-[9px] uppercase tracking-[0.13em] text-white/25">Recent conversations</span><span className="text-[9px] tabular-nums text-white/20">{conversations.length}</span></div>}
         <div className="mt-3 space-y-1 overflow-y-auto pb-6 lg:max-h-[calc(100%-125px)]">
           {conversations.length === 0 ? <p className="px-2 py-4 text-[10px] leading-5 text-white/25">Your conversations will appear here on this browser.</p> : conversations.map((conversation) => (
-            <button key={conversation.id} type="button" onClick={() => onSelectConversation(conversation)} className={["w-full rounded-xl px-3 py-3 text-left transition", activeConversationId === conversation.id ? "bg-white/[0.07] text-white/80" : "text-white/40 hover:bg-white/[0.035] hover:text-white/65"].join(" ")}>
-              <div className="truncate text-[11px]">{conversation.title}</div><div className="mt-1 text-[9px] text-white/20">{new Date(conversation.updatedAt).toLocaleDateString()}</div>
+            <button key={conversation.id} type="button" title={conversation.title} onClick={() => onSelectConversation(conversation)} className={["w-full rounded-xl px-3 py-3 text-left transition", historyCollapsed ? "lg:px-0 lg:text-center" : "", activeConversationId === conversation.id ? "bg-white/[0.07] text-white/80" : "text-white/40 hover:bg-white/[0.035] hover:text-white/65"].join(" ")}>
+              {historyCollapsed ? <span className="text-[11px] font-medium">{conversation.title.slice(0, 1).toUpperCase()}</span> : <><div className="truncate text-[11px]">{conversation.title}</div><div className="mt-1 text-[9px] text-white/20">{new Date(conversation.updatedAt).toLocaleDateString()}</div></>}
             </button>
           ))}
         </div>
-        <div className="absolute bottom-4 left-4 right-4 border-t border-white/[0.06] pt-3 text-[9px] leading-4 text-white/20">History is stored in this browser for this storefront.</div>
+        {!historyCollapsed && <div className="absolute bottom-4 left-4 right-4 border-t border-white/[0.06] pt-3 text-[9px] leading-4 text-white/20">History is stored in this browser for this storefront.</div>}
       </aside>
       {historyOpen && <button type="button" aria-label="Close conversation history" onClick={onToggleHistory} className="fixed inset-0 z-30 bg-black/60 lg:hidden" />}
       <section className="flex min-w-0 flex-1 flex-col">
@@ -1152,7 +1156,7 @@ function Intelligence({
               </div>
             )}
           </div>
-          <div className="fixed inset-x-0 bottom-[76px] z-30 border-t border-white/[0.06] bg-[#090807]/95 px-4 py-4 backdrop-blur-2xl lg:bottom-0 lg:left-[276px] lg:px-6">
+          <div className={["fixed inset-x-0 bottom-[76px] z-30 border-t border-white/[0.06] bg-[#090807]/95 px-4 py-4 backdrop-blur-2xl lg:bottom-0 lg:px-6", historyCollapsed ? "lg:left-[76px]" : "lg:left-[276px]"].join(" ")}>
             <div className="mx-auto max-w-[760px]"><Composer input={input} setInput={setInput} onSubmit={onSubmit} isThinking={isThinking} /><div className="mt-2 text-center text-[8px] text-white/20">Answers are grounded in the store evidence currently available.</div></div>
           </div>
         </div>
