@@ -42,6 +42,13 @@ type Message = {
   content: string;
 };
 
+type ConversationHistory = {
+  id: string;
+  title: string;
+  updatedAt: number;
+  messages: Message[];
+};
+
 type IntelligenceResponse = {
   ok?: boolean;
   answer?: string;
@@ -130,10 +137,29 @@ export default function RedenDashboardPage() {
 
   const [input, setInput] = useState("");
   const [messages, setMessages] = useState<Message[]>([]);
+  const [conversations, setConversations] = useState<ConversationHistory[]>([]);
+  const [activeConversationId, setActiveConversationId] = useState<string | null>(null);
+  const [historyOpen, setHistoryOpen] = useState(false);
+  const [historyCollapsed, setHistoryCollapsed] = useState(false);
+  const [historySiteId, setHistorySiteId] = useState<string | null>(null);
   const [isThinking, setIsThinking] = useState(false);
+  const [requestError, setRequestError] = useState<string | null>(null);
+  const [isOnline, setIsOnline] = useState(true);
   const conversationIdRef = useRef<string | null>(null);
 
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  useEffect(() => {
+    const updateConnection = () => setIsOnline(navigator.onLine);
+    updateConnection();
+    window.addEventListener("online", updateConnection);
+    window.addEventListener("offline", updateConnection);
+
+    return () => {
+      window.removeEventListener("online", updateConnection);
+      window.removeEventListener("offline", updateConnection);
+    };
+  }, []);
 
   /* -------------------------------------------------------
      SITE RESOLUTION
@@ -142,6 +168,41 @@ export default function RedenDashboardPage() {
   const [siteId, setSiteId] = useState<string | null>(null);
   const [siteName, setSiteName] = useState<string | null>(null);
   const [siteError, setSiteError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!siteId) return;
+    try {
+      const stored = window.localStorage.getItem(`reden-chat-history:${siteId}`);
+      const parsed = stored ? (JSON.parse(stored) as ConversationHistory[]) : [];
+      setConversations(Array.isArray(parsed) ? parsed.filter((item) => item && typeof item.id === "string" && Array.isArray(item.messages)).slice(0, 30) : []);
+    } catch {
+      // Local history is optional; storage failure must not block chat.
+      setConversations([]);
+    } finally {
+      setHistorySiteId(siteId);
+    }
+  }, [siteId]);
+
+  useEffect(() => {
+    if (!siteId || historySiteId !== siteId) return;
+    try {
+      window.localStorage.setItem(`reden-chat-history:${siteId}`, JSON.stringify(conversations.slice(0, 30)));
+    } catch {
+      // Storage can be unavailable or full. Live chat remains usable.
+    }
+  }, [siteId, historySiteId, conversations]);
+
+  useEffect(() => {
+    if (!activeConversationId || messages.length === 0) return;
+    const firstQuestion = messages.find((message) => message.role === "user")?.content || "New conversation";
+    const updated: ConversationHistory = {
+      id: activeConversationId,
+      title: firstQuestion.length > 54 ? `${firstQuestion.slice(0, 51)}…` : firstQuestion,
+      updatedAt: Date.now(),
+      messages,
+    };
+    setConversations((current) => [updated, ...current.filter((item) => item.id !== activeConversationId)].slice(0, 30));
+  }, [activeConversationId, messages]);
 
   /* -------------------------------------------------------
      METRICS
@@ -177,10 +238,11 @@ export default function RedenDashboardPage() {
       setMetrics(data.metrics);
       setMetricsUpdatedAt(data.generatedAt ?? new Date().toISOString());
     } catch (error) {
-      const message =
-        error instanceof Error
-          ? error.message
-          : "REDEN could not load your business metrics.";
+      const message = !navigator.onLine
+        ? "Your device is offline. Reconnect to refresh your store data."
+        : error instanceof Error && /timeout|timed out/i.test(error.message)
+        ? "REDEN is taking longer than expected to retrieve your store data. Try again shortly."
+        : "REDEN couldn't retrieve your store data right now. Your existing figures have not been replaced.";
 
       setMetricsError(message);
     } finally {
@@ -341,7 +403,15 @@ export default function RedenDashboardPage() {
       content: question,
     };
 
-    setMessages((current) => [...current, userMessage]);
+    if (!navigator.onLine) {
+      setIsOnline(false);
+      setRequestError("You're offline. Reconnect to the internet and send your question again.");
+      return;
+    }
+
+    setRequestError(null);
+    const isRetry = messages[messages.length - 1]?.role === "user" && messages[messages.length - 1]?.content === question;
+    if (!isRetry) setMessages((current) => [...current, userMessage]);
     setInput("");
     setIsThinking(true);
 
@@ -350,6 +420,7 @@ export default function RedenDashboardPage() {
         typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
           ? crypto.randomUUID()
           : `reden-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+      setActiveConversationId(conversationIdRef.current);
     }
 
     try {
@@ -375,9 +446,11 @@ export default function RedenDashboardPage() {
       }
 
       if (!response.ok || !data.ok || !data.answer) {
-        throw new Error(
-          data.error || "REDEN could not answer the question."
-        );
+        if (response.status === 401) throw new Error("AUTH_REQUIRED");
+        if (response.status === 404) throw new Error("STORE_NOT_CONNECTED");
+        if (response.status === 504 || /timeout/i.test(data.error || "")) throw new Error("REQUEST_TIMEOUT");
+        if (response.status >= 500 || /unavailable|failed/i.test(data.error || "")) throw new Error("SERVICE_UNAVAILABLE");
+        throw new Error("REQUEST_NOT_COMPLETED");
       }
 
       setMessages((current) => [
@@ -390,22 +463,50 @@ export default function RedenDashboardPage() {
       ]);
 
     } catch (error) {
-      const message =
-        error instanceof Error
-          ? error.message
-          : "REDEN could not complete the analysis.";
+      const code = error instanceof Error ? error.message : "";
+      const message = !navigator.onLine
+        ? "Your connection dropped before REDEN could finish. Your question is still here; reconnect and send it again."
+        : /failed to fetch|networkerror|load failed/i.test(code)
+        ? "I couldn't reach REDEN just now. Your question wasn't analysed; check your connection and try again."
+        : code === "AUTH_REQUIRED"
+        ? "Your session needs to be refreshed. Sign in again, then retry your question."
+        : code === "STORE_NOT_CONNECTED"
+        ? "I couldn't find an active store connection. Reconnect your storefront before asking about its activity."
+        : code === "REQUEST_TIMEOUT"
+        ? "This is taking longer than expected. I couldn't complete the analysis, so I haven't drawn a conclusion. Please try again."
+        : code === "SERVICE_UNAVAILABLE"
+        ? "REDEN is temporarily unreachable. Your store data hasn't been analysed for this request. Please try again shortly."
+        : "I couldn't complete that response. No new analysis was produced. Please try again.";
 
-      setMessages((current) => [
-        ...current,
-        {
-          id: Date.now() + 1,
-          role: "reden",
-          content: message,
-        },
-      ]);
+      setInput(question);
+      setRequestError(message);
     } finally {
       setIsThinking(false);
     }
+  }
+
+  function startNewConversation() {
+    const id =
+      typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
+        ? crypto.randomUUID()
+        : `reden-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+    conversationIdRef.current = id;
+    setActiveConversationId(id);
+    setMessages([]);
+    setInput("");
+    setRequestError(null);
+    setHistoryOpen(false);
+    setActiveRoute("intelligence");
+  }
+
+  function openConversation(conversation: ConversationHistory) {
+    conversationIdRef.current = conversation.id;
+    setActiveConversationId(conversation.id);
+    setMessages(conversation.messages);
+    setInput("");
+    setRequestError(null);
+    setHistoryOpen(false);
+    setActiveRoute("intelligence");
   }
 
   function askQuestion(question: string) {
@@ -662,7 +763,17 @@ export default function RedenDashboardPage() {
             setInput={setInput}
             messages={messages}
             isThinking={isThinking}
+            requestError={requestError}
+            isOnline={isOnline}
             hasConversation={hasConversation}
+            conversations={conversations}
+            activeConversationId={activeConversationId}
+            historyOpen={historyOpen}
+            historyCollapsed={historyCollapsed}
+            onToggleHistory={() => setHistoryOpen((current) => !current)}
+            onToggleCollapsed={() => setHistoryCollapsed((current) => !current)}
+            onNewConversation={startNewConversation}
+            onSelectConversation={openConversation}
             onSubmit={handleSubmit}
             onSuggestion={askQuestion}
           />
@@ -986,68 +1097,93 @@ function Decisions() {
 ========================================================= */
 
 function Intelligence({
-  input,
-  setInput,
-  messages,
-  isThinking,
-  hasConversation,
-  onSubmit,
-  onSuggestion,
+  input, setInput, messages, isThinking, requestError, isOnline, hasConversation,
+  conversations, activeConversationId, historyOpen, historyCollapsed, onToggleHistory,
+  onToggleCollapsed, onNewConversation, onSelectConversation, onSubmit, onSuggestion,
 }: {
-  input: string;
-  setInput: (value: string) => void;
-  messages: Message[];
-  isThinking: boolean;
-  hasConversation: boolean;
-  onSubmit: (event: FormEvent<HTMLFormElement>) => void;
-  onSuggestion: (question: string) => void;
+  input: string; setInput: (value: string) => void; messages: Message[]; isThinking: boolean;
+  requestError: string | null; isOnline: boolean; hasConversation: boolean;
+  conversations: ConversationHistory[]; activeConversationId: string | null; historyOpen: boolean;
+  historyCollapsed: boolean; onToggleHistory: () => void; onToggleCollapsed: () => void; onNewConversation: () => void;
+  onSelectConversation: (conversation: ConversationHistory) => void;
+  onSubmit: (event: FormEvent<HTMLFormElement>) => void; onSuggestion: (question: string) => void;
 }) {
   return (
-    <div className="relative min-h-[calc(100vh-62px)]">
-      <div className="mx-auto flex w-full max-w-[960px] items-center justify-between px-5 pb-4 pt-7 md:px-8">
-        <div>
-          <div className="text-[9px] uppercase tracking-[0.16em] text-white/25">REDEN / Intelligence</div>
-          <div className="mt-1 text-[12px] text-white/55">Business analysis, grounded in your store data</div>
+    <div className="relative flex min-h-[calc(100vh-62px)]">
+      <aside className={["fixed inset-y-[62px] left-0 z-40 w-[276px] border-r border-white/[0.07] bg-[#0d0b09] p-4 transition-all duration-200 lg:sticky lg:top-[96px] lg:z-10 lg:block lg:h-[calc(100vh-96px)] lg:translate-x-0", historyCollapsed ? "lg:w-[76px] lg:px-3" : "lg:w-[276px]", historyOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"].join(" ")}>
+        <div className={["flex items-center", historyCollapsed ? "justify-center" : "justify-between"].join(" ")}>
+          {!historyCollapsed && <div className="text-[10px] font-medium uppercase tracking-[0.15em] text-white/35">Intelligence</div>}
+          <button type="button" onClick={onToggleCollapsed} className="hidden rounded-lg p-2 text-white/35 transition hover:bg-white/[0.05] hover:text-white/70 lg:block" aria-label={historyCollapsed ? "Expand conversation sidebar" : "Collapse conversation sidebar"} title={historyCollapsed ? "Expand sidebar" : "Collapse sidebar"}><ChevronRight size={15} className={historyCollapsed ? "" : "rotate-180"} /></button>
+          <button type="button" onClick={onToggleHistory} className="rounded-lg p-2 text-white/35 hover:bg-white/[0.05] lg:hidden" aria-label="Close history"><X size={15} /></button>
         </div>
-      </div>
-
-      {!hasConversation ? (
-        <div className="mx-auto flex min-h-[calc(100vh-260px)] w-full max-w-[820px] flex-col justify-center px-5 pb-36 pt-8 md:px-8">
-          <div className="max-w-2xl">
-            <div className="text-[11px] font-medium uppercase tracking-[0.14em] text-[#C97C3E]/80">REDEN Intelligence</div>
-            <h1 className="mt-4 text-[34px] font-medium leading-[1.08] tracking-[-0.055em] text-white/90 md:text-[48px]">What should we<br /><span className="text-white/35">look into today?</span></h1>
-            <p className="mt-4 max-w-xl text-[13px] leading-6 text-white/35">Ask a direct question about your store. REDEN should separate observed facts from interpretation and be clear when the data cannot support a conclusion.</p>
-            <div className="mt-7 flex flex-wrap gap-2">
-              {SUGGESTIONS.map((suggestion) => <button key={suggestion} type="button" onClick={() => onSuggestion(suggestion)} className="rounded-full border border-white/[0.08] bg-white/[0.025] px-3.5 py-2.5 text-left text-[10px] text-white/50 transition hover:border-[#C97C3E]/30 hover:bg-[#C97C3E]/[0.05] hover:text-white/80">{suggestion}</button>)}
-            </div>
+        <button type="button" onClick={onNewConversation} disabled={isThinking} title="New conversation" className={["mt-5 flex w-full items-center justify-center gap-2 rounded-xl border border-[#C97C3E]/25 bg-[#C97C3E]/[0.08] px-3 py-3 text-[11px] font-medium text-[#D99A69] transition hover:bg-[#C97C3E]/[0.13] disabled:cursor-not-allowed disabled:opacity-40", historyCollapsed ? "lg:px-0" : ""].join(" ")}><span className="text-base leading-none">+</span>{!historyCollapsed && <span>New conversation</span>}</button>
+        {!historyCollapsed && <div className="mt-7 flex items-center justify-between px-1"><span className="text-[9px] uppercase tracking-[0.13em] text-white/25">Recent conversations</span><span className="text-[9px] tabular-nums text-white/20">{conversations.length}</span></div>}
+        <div className="mt-3 space-y-1 overflow-y-auto pb-6 lg:max-h-[calc(100%-125px)]">
+          {conversations.length === 0 ? <p className="px-2 py-4 text-[10px] leading-5 text-white/25">Your conversations will appear here on this browser.</p> : conversations.map((conversation) => (
+            <button key={conversation.id} type="button" title={conversation.title} disabled={isThinking} onClick={() => onSelectConversation(conversation)} className={["w-full rounded-xl px-3 py-3 text-left transition disabled:cursor-not-allowed disabled:opacity-40", historyCollapsed ? "lg:px-0 lg:text-center" : "", activeConversationId === conversation.id ? "bg-white/[0.07] text-white/80" : "text-white/40 hover:bg-white/[0.035] hover:text-white/65"].join(" ")}>
+              {historyCollapsed ? <span className="text-[11px] font-medium">{conversation.title.slice(0, 1).toUpperCase()}</span> : <><div className="truncate text-[11px]">{conversation.title}</div><div className="mt-1 text-[9px] text-white/20">{new Date(conversation.updatedAt).toLocaleDateString()}</div></>}
+            </button>
+          ))}
+        </div>
+        {!historyCollapsed && <div className="absolute bottom-4 left-4 right-4 border-t border-white/[0.06] pt-3 text-[9px] leading-4 text-white/20">History is stored in this browser for this storefront.</div>}
+      </aside>
+      {historyOpen && <button type="button" aria-label="Close conversation history" onClick={onToggleHistory} className="fixed inset-0 z-30 bg-black/60 lg:hidden" />}
+      <section className="flex min-w-0 flex-1 flex-col">
+        <div className="flex h-[64px] shrink-0 items-center justify-between border-b border-white/[0.06] px-4 md:px-8">
+          <div className="flex items-center gap-3">
+            <button type="button" onClick={onToggleHistory} className="rounded-lg border border-white/[0.07] p-2 text-white/45 hover:bg-white/[0.04] lg:hidden" aria-label="Open conversation history"><MoreHorizontal size={16} /></button>
+            <div><div className="text-[12px] font-medium text-white/75">Intelligence</div><div className="mt-0.5 text-[10px] text-white/30">Business analysis, grounded in your store data</div></div>
           </div>
+          <div className="flex items-center gap-2 text-[9px] text-white/30"><span className={["h-1.5 w-1.5 rounded-full", isOnline ? "bg-emerald-400/60" : "bg-white/20"].join(" ")} />{isOnline ? "Connected" : "Offline"}</div>
         </div>
-      ) : (
-        <div className="mx-auto min-h-[calc(100vh-220px)] w-full max-w-[820px] px-5 pb-48 pt-8 md:px-8">
-          <div className="space-y-10">
-            {messages.map((message) => <div key={message.id}>
-              {message.role === "user" ? (
-                <div className="flex justify-end"><div className="max-w-[88%] rounded-2xl bg-white/[0.07] px-4 py-3 text-[13px] leading-6 text-white/80 md:max-w-[78%]">{message.content}</div></div>
-              ) : (
-                <div className="max-w-[760px]">
-                  <div className="mb-3 text-[10px] font-medium uppercase tracking-[0.14em] text-[#C97C3E]/85">REDEN</div>
-                  <div className="whitespace-pre-wrap text-[13px] leading-7 text-white/75 md:text-[14px]">{message.content}</div>
+        <div className="relative flex min-h-0 flex-1 flex-col">
+          <div className="flex-1 overflow-y-auto px-4 pb-44 pt-8 md:px-8">
+            {!hasConversation ? (
+              <div className="mx-auto flex min-h-[calc(100vh-330px)] w-full max-w-[760px] flex-col justify-center">
+                <div className="max-w-2xl">
+                  <h1 className="text-[34px] font-medium leading-[1.08] tracking-[-0.055em] text-white/90 md:text-[48px]">What should we<br /><span className="text-white/35">look into today?</span></h1>
+                  <p className="mt-4 max-w-xl text-[13px] leading-6 text-white/35">Ask a direct question about your store. REDEN separates observed facts from interpretation and identifies where the available evidence has limits.</p>
+                  <div className="mt-7 grid gap-2 sm:grid-cols-2">{SUGGESTIONS.map((suggestion) => <button key={suggestion} type="button" onClick={() => onSuggestion(suggestion)} className="rounded-xl border border-white/[0.08] bg-white/[0.025] px-4 py-3 text-left text-[11px] text-white/50 transition hover:border-[#C97C3E]/30 hover:bg-[#C97C3E]/[0.05] hover:text-white/80">{suggestion}</button>)}</div>
+                  {requestError && <div role="status" className="mt-5 rounded-xl border border-white/[0.07] bg-white/[0.025] px-4 py-3 text-[11px] leading-6 text-white/45">{requestError}</div>}
                 </div>
-              )}
-            </div>)}
-            {isThinking && <div className="max-w-[760px]"><div className="mb-3 text-[10px] font-medium uppercase tracking-[0.14em] text-[#C97C3E]/85">REDEN</div><div className="flex items-center gap-2 text-[12px] text-white/35"><span className="h-1.5 w-1.5 animate-pulse rounded-full bg-[#C97C3E]" />Reviewing available store evidence…</div></div>}
+              </div>
+            ) : (
+              <div className="mx-auto w-full max-w-[760px] space-y-10">
+                {!isOnline && <div className="rounded-xl border border-white/[0.07] bg-white/[0.025] px-4 py-3 text-[11px] leading-5 text-white/45">You're offline. REDEN will be available again when your connection returns.</div>}
+                {messages.map((message) => <div key={message.id}>{message.role === "user" ? <div className="flex justify-end"><div className="max-w-[88%] rounded-2xl bg-white/[0.07] px-4 py-3 text-[13px] leading-6 text-white/80 md:max-w-[78%]">{message.content}</div></div> : <div className="max-w-[760px]"><RichAnswer content={message.content} /></div>}</div>)}
+                {isThinking && <div className="flex items-center gap-2 py-1 text-[11px] text-white/30"><span className="h-1 w-1 animate-pulse rounded-full bg-[#C97C3E]/70" />Reviewing your question…</div>}
+                {requestError && <div role="status" className="max-w-[760px] rounded-xl border border-white/[0.07] bg-white/[0.025] px-4 py-3 text-[11px] leading-6 text-white/45">{requestError}</div>}
+              </div>
+            )}
+          </div>
+          <div className={["fixed inset-x-0 bottom-[76px] z-30 border-t border-white/[0.06] bg-[#090807]/95 px-4 py-4 backdrop-blur-2xl lg:bottom-0 lg:px-6", historyCollapsed ? "lg:left-[76px]" : "lg:left-[276px]"].join(" ")}>
+            <div className="mx-auto max-w-[760px]"><Composer input={input} setInput={setInput} onSubmit={onSubmit} isThinking={isThinking} /><div className="mt-2 text-center text-[8px] text-white/20">Answers are grounded in the store evidence currently available.</div></div>
           </div>
         </div>
-      )}
-
-      <div className="fixed inset-x-0 bottom-[76px] z-30 border-t border-white/[0.06] bg-[#090807]/95 px-4 py-4 backdrop-blur-2xl lg:bottom-0 lg:px-6">
-        <div className="mx-auto max-w-[820px]">
-          <Composer input={input} setInput={setInput} onSubmit={onSubmit} isThinking={isThinking} />
-          <div className="mt-2 text-center text-[8px] text-white/20">REDEN can only answer from the evidence available to it. Verify important decisions against your store records.</div>
-        </div>
-      </div>
+      </section>
     </div>
   );
+}
+
+function RichAnswer({ content }: { content: string }) {
+  const lines = content.split(/\r?\n/);
+  const renderInline = (value: string) => value.split(/(\*\*[^*]+\*\*|`[^`]+`|\*[^*]+\*)/g).map((part, index) => {
+    if (part.startsWith("**") && part.endsWith("**")) return <strong key={index} className="font-semibold text-white/90">{part.slice(2, -2)}</strong>;
+    if (part.startsWith("`") && part.endsWith("`")) return <code key={index} className="rounded bg-white/[0.07] px-1.5 py-0.5 text-[0.9em] text-[#D9A477]">{part.slice(1, -1)}</code>;
+    if (part.startsWith("*") && part.endsWith("*")) return <em key={index}>{part.slice(1, -1)}</em>;
+    return part;
+  });
+  return <div className="space-y-3 text-[14px] leading-7 text-white/75 md:text-[15px]">{lines.map((line, index) => {
+    const value = line.trim();
+    if (!value) return <div key={index} className="h-1" />;
+    if (/^###\s/.test(value)) return <h3 key={index} className="pt-2 text-[14px] font-semibold text-white/90">{renderInline(value.replace(/^###\s/, ""))}</h3>;
+    if (/^##\s/.test(value)) return <h2 key={index} className="pt-3 text-[17px] font-semibold tracking-[-0.02em] text-white/90">{renderInline(value.replace(/^##\s/, ""))}</h2>;
+    if (/^#\s/.test(value)) return <h2 key={index} className="pt-3 text-[19px] font-semibold tracking-[-0.03em] text-white/90">{renderInline(value.replace(/^#\s/, ""))}</h2>;
+    if (/^[-*]\s/.test(value)) return <div key={index} className="flex gap-3 pl-1"><span className="mt-[11px] h-1 w-1 shrink-0 rounded-full bg-[#C97C3E]/80" /><div className="min-w-0 flex-1">{renderInline(value.replace(/^[-*]\s/, ""))}</div></div>;
+    if (/^\d+[.)]\s/.test(value)) return <div key={index} className="flex gap-3 pl-1"><span className="shrink-0 text-[12px] font-medium text-[#D49A6B]">{value.match(/^\d+[.)]/)?.[0]}</span><div className="min-w-0 flex-1">{renderInline(value.replace(/^\d+[.)]\s/, ""))}</div></div>;
+    if (/^---+$/.test(value)) return <div key={index} className="my-3 border-t border-white/[0.08]" />;
+    return <p key={index}>{renderInline(value)}</p>;
+  })}</div>;
 }
 
 function Composer({
