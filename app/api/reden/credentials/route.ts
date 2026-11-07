@@ -1,7 +1,9 @@
 import { NextResponse } from "next/server";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
+import { createClient as createSupabaseServerClient } from "@/lib/supabase/server";
 
 import { getAdminSupabase } from "@/lib/reden/connection";
-import { getAuthenticatedEmail } from "@/lib/authenticated-email";
 
 import {
   REDEN_API_URL,
@@ -18,6 +20,38 @@ export const runtime = "nodejs";
 
 const REDEN_ONBOARD_TIMEOUT_MS = 30_000;
 const SITE_ID_MAX_LENGTH = 200;
+
+/**
+ * Credential recovery is a developer-only operation. Do not use
+ * getAuthenticatedEmail() here because that helper intentionally
+ * prioritises REDEN invite-owner sessions for merchant-facing routes.
+ * Resolve the actual PRETHIM account, matching /api/reden/stores.
+ */
+async function getAuthenticatedDeveloperEmail(): Promise<string | null> {
+  try {
+    const session = await getServerSession(authOptions);
+    const email = session?.user?.email?.trim().toLowerCase();
+    if (email) return email;
+  } catch {
+    // Continue to the verified Supabase Auth session.
+  }
+
+  try {
+    const supabase = createSupabaseServerClient();
+    const {
+      data: { user },
+      error,
+    } = await supabase.auth.getUser();
+
+    if (!error && user?.email?.trim()) {
+      return user.email.trim().toLowerCase();
+    }
+  } catch {
+    // Fail closed when neither developer session can be verified.
+  }
+
+  return null;
+}
 
 /*
  * REDEN's /api/v1/onboard is idempotent on (owner_email, name):
@@ -113,7 +147,7 @@ export async function GET(req: Request) {
        1. AUTHENTICATE PRETHIM USER
     ===================================================== */
 
-    const developerEmail = (await getAuthenticatedEmail()) || "";
+    const developerEmail = (await getAuthenticatedDeveloperEmail()) || "";
 
     if (!developerEmail) {
       return jsonError("unauthorized", 401);
