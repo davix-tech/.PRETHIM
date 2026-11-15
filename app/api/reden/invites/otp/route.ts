@@ -67,7 +67,7 @@ export async function POST(req: Request) {
       if (!apiKey) return NextResponse.json({ ok: false, error: "Email verification is temporarily unavailable." }, { status: 503 });
       const resend = new Resend(apiKey);
       const { error: mailError } = await resend.emails.send({
-        from: process.env.PRETHIM_EMAIL_FROM?.trim() || "REDEN <noreply@prethim.name.ng>",
+        from: process.env.PRETHIM_EMAIL_FROM?.trim() || "REDEN <noreply@prethim.site>",
         to: [email],
         subject: "Your REDEN verification code",
         text: "Your REDEN verification code is " + code + ". It expires in 10 minutes. If you did not request this, ignore this email.",
