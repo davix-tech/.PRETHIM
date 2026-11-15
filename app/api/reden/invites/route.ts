@@ -324,7 +324,7 @@ export async function POST(req: Request) {
     const safeStoreName = escapeHtml(storeName);
     const resend = new Resend(resendApiKey);
     const { error: emailError } = await resend.emails.send({
-      from: process.env.PRETHIM_EMAIL_FROM?.trim() || "PRETHIM <noreply@prethim.name.ng>",
+      from: process.env.PRETHIM_EMAIL_FROM?.trim() || "PRETHIM <noreply@prethim.site>",
       to: [clientEmail],
       subject: "Your store has been invited to REDEN",
       text: [
