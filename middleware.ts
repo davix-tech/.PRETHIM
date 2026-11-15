@@ -96,7 +96,7 @@ export async function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
-    "/dashboard/:path*",
+    // Temporary access: /dashboard is intentionally excluded.
     "/reden/:path*",
     "/reden-addstore/:path*",
     "/reden-dashboard/:path*",
