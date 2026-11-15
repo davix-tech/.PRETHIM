@@ -26,25 +26,6 @@ async function hasValidRedenInviteSession(request: NextRequest) {
 }
 
 export async function middleware(request: NextRequest) {
-  // TEMPORARY RECORDING ACCESS: allow the PRETHIM/REDEN UI routes to render
-  // without app sign-in. API routes and their own authorization remain protected.
-  const pathname = request.nextUrl.pathname;
-  const recordingPrefixes = [
-    "/dashboard",
-    "/reden",
-    "/reden-addstore",
-    "/reden-dashboard",
-    "/reden-developer",
-    "/reden-install",
-  ];
-  if (
-    recordingPrefixes.some(
-      (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`)
-    )
-  ) {
-    return NextResponse.next();
-  }
-
   // Accept a verified REDEN store-owner email identity first.
   if (await hasValidRedenInviteSession(request)) {
     return NextResponse.next();
@@ -115,7 +96,7 @@ export async function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
-    // Temporary access: /dashboard is intentionally excluded.
+    "/dashboard/:path*",
     "/reden/:path*",
     "/reden-addstore/:path*",
     "/reden-dashboard/:path*",
