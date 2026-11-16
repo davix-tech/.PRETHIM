@@ -1,8 +1,6 @@
 import { NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
 import { createClient as createSupabaseClient } from "@supabase/supabase-js";
-import { createClient as createSupabaseServerClient } from "../../../../lib/supabase/server";
+import { getAuthenticatedDeveloperEmail } from "@/lib/reden/developer-auth";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -31,12 +29,7 @@ function getAdminSupabase() {
  */
 export async function GET(req: Request) {
   try {
-    const session = await getServerSession(authOptions);
-
-    // Support both PRETHIM sign-in paths: NextAuth (Google) and
-    // Supabase Auth (email magic link). Only use the verified server session.
-    let developerEmail =
-      session?.user?.email?.trim().toLowerCase() || "";
+    const developerEmail = await getAuthenticatedDeveloperEmail();
 
     if (!developerEmail) {
       try {
