@@ -719,6 +719,19 @@ export async function POST(req: Request) {
           existingConnection.status
         );
 
+      const existingDeveloperEmail =
+        cleanString(existingConnection.developer_email).toLowerCase();
+
+      if (
+        existingDeveloperEmail &&
+        existingDeveloperEmail !== developerEmail
+      ) {
+        return jsonError(
+          "connection_owned_by_another_developer",
+          409
+        );
+      }
+
       if (
         cleanString(
           existingConnection.user_email
@@ -746,6 +759,7 @@ export async function POST(req: Request) {
         .from("reden_connections")
         .update({
           store_name: storeName,
+          developer_email: developerEmail,
           updated_at:
             new Date().toISOString(),
         })
