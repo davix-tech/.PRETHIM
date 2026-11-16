@@ -5,6 +5,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 import { Resend } from "resend";
+import { getAuthenticatedDeveloperEmail } from "@/lib/reden/developer-auth";
 
 export const dynamic = "force-dynamic";
 
@@ -45,9 +46,9 @@ function getAdminSupabase() {
 
 export async function POST(req: Request) {
   try {
-    const session = await getServerSession(authOptions);
+    const email = (await getAuthenticatedDeveloperEmail()) || "";
 
-    if (!session?.user) {
+    if (!email) {
       return NextResponse.json(
         {
           ok: false,
@@ -56,10 +57,6 @@ export async function POST(req: Request) {
         { status: 401 }
       );
     }
-
-    const email = session.user.email
-      ?.trim()
-      .toLowerCase();
 
     if (!email) {
       return NextResponse.json(
