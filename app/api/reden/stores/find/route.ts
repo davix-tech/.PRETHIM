@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
 import { getAdminSupabase } from "@/lib/reden/connection";
+import { getAuthenticatedDeveloperEmail } from "@/lib/reden/developer-auth";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -12,8 +11,7 @@ function cleanString(value: unknown): string {
 
 export async function POST(req: Request) {
   try {
-    const session = await getServerSession(authOptions);
-    const developerEmail = cleanString(session?.user?.email).toLowerCase();
+    const developerEmail = (await getAuthenticatedDeveloperEmail()) || "";
 
     if (!developerEmail) {
       return NextResponse.json(
