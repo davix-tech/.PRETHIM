@@ -29,23 +29,7 @@ function getAdminSupabase() {
  */
 export async function GET(req: Request) {
   try {
-    const developerEmail = await getAuthenticatedDeveloperEmail();
-
-    if (!developerEmail) {
-      try {
-        const authClient = createSupabaseServerClient();
-        const { data: { user }, error: authError } = await authClient.auth.getUser();
-
-        if (!authError && user?.email) {
-          developerEmail = user.email.trim().toLowerCase();
-        }
-      } catch (authError) {
-        console.error(
-          "[REDEN STORES] Supabase session lookup failed:",
-          authError instanceof Error ? authError.message : authError
-        );
-      }
-    }
+    const developerEmail = (await getAuthenticatedDeveloperEmail()) || "";
 
     if (!developerEmail) {
       return NextResponse.json(
@@ -62,6 +46,7 @@ export async function GET(req: Request) {
         }
       );
     }
+
 
     let supabase;
 
