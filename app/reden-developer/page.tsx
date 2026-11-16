@@ -59,6 +59,13 @@ type InviteResponse = {
   error?: string;
 };
 
+type NameCheckResponse = {
+  ok?: boolean;
+  available?: boolean;
+  existing?: boolean;
+  error?: string;
+};
+
 type FindStoreResponse = {
   ok?: boolean;
   found?: boolean;
@@ -376,6 +383,8 @@ export default function RedenDeveloperPage() {
 
   const [storeName, setStoreName] = useState("");
   const [clientEmail, setClientEmail] = useState("");
+  const [nameCheckStatus, setNameCheckStatus] = useState<"idle" | "checking" | "available" | "taken" | "error">("idle");
+  const [nameCheckMessage, setNameCheckMessage] = useState("");
 
   const [creating, setCreating] = useState(false);
   const [checking, setChecking] = useState(false);
@@ -538,6 +547,61 @@ export default function RedenDeveloperPage() {
     void loadCredentials(store);
   };
 
+  const checkStoreName = async (
+    nameValue = storeName,
+    emailValue = clientEmail,
+    showError = false
+  ): Promise<boolean> => {
+    const name = nameValue.trim();
+    const email = emailValue.trim().toLowerCase();
+
+    if (!name || !email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      setNameCheckStatus("idle");
+      setNameCheckMessage("");
+      return false;
+    }
+
+    setNameCheckStatus("checking");
+    setNameCheckMessage("Checking the REDEN database…");
+
+    try {
+      const response = await fetch("/api/reden/stores/check-name", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+        },
+        body: JSON.stringify({ name, clientEmail: email }),
+        cache: "no-store",
+      });
+
+      const data: NameCheckResponse = await response.json().catch(() => ({}));
+      if (!response.ok || !data?.ok) {
+        throw new Error(data?.error || "Unable to check storefront name.");
+      }
+
+      if (!data.available) {
+        setNameCheckStatus("taken");
+        setNameCheckMessage("This name is already in use. Choose another storefront name.");
+        return false;
+      }
+
+      setNameCheckStatus("available");
+      setNameCheckMessage(
+        data.existing
+          ? "This name is already registered to this client. PRETHIM can reconnect the existing storefront."
+          : "This storefront name is available."
+      );
+      return true;
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Unable to check storefront name.";
+      setNameCheckStatus("error");
+      setNameCheckMessage(message);
+      if (showError) setError(message);
+      return false;
+    }
+  };
+
   const createStore = async () => {
     const name = storeName.trim();
     const email = clientEmail.trim().toLowerCase();
@@ -561,6 +625,12 @@ export default function RedenDeveloperPage() {
     setError("");
 
     try {
+      const nameIsAvailable = await checkStoreName(name, email, true);
+      if (!nameIsAvailable) {
+        setCreating(false);
+        return;
+      }
+
       /* =====================================================
          STEP 0 — CHECK FOR AN EXISTING STOREFRONT FIRST
 
@@ -580,7 +650,7 @@ export default function RedenDeveloperPage() {
             "Content-Type": "application/json",
             Accept: "application/json",
           },
-          body: JSON.stringify({ storeName: name }),
+          body: JSON.stringify({ storeName: name, clientEmail: email }),
           cache: "no-store",
         }
       );
@@ -1095,11 +1165,28 @@ After implementation, show me:
                 disabled={creating}
                 onChange={(event) => {
                   setStoreName(event.target.value);
+                  setNameCheckStatus("idle");
+                  setNameCheckMessage("");
                   setError("");
                 }}
+                onBlur={() => void checkStoreName()}
                 placeholder="client-store.com"
                 className="mt-2.5 h-11 w-full rounded-xl border border-white/[0.09] bg-black/20 px-3.5 text-[11px] text-[#e5dfd9] outline-none placeholder:text-[#3f3a36] focus:border-[#ff5a1f]/50"
               />
+              {nameCheckMessage && (
+                <p
+                  className={`mt-2 text-[9px] leading-5 ${
+                    nameCheckStatus === "available"
+                      ? "text-[#72B77B]"
+                      : nameCheckStatus === "checking"
+                        ? "text-[#8B8178]"
+                        : "text-[#D17A61]"
+                  }`}
+                  role="status"
+                >
+                  {nameCheckMessage}
+                </p>
+              )}
 
               <label
                 htmlFor="client-email"
@@ -1114,8 +1201,11 @@ After implementation, show me:
                 value={clientEmail}
                 onChange={(event) => {
                   setClientEmail(event.target.value);
+                  setNameCheckStatus("idle");
+                  setNameCheckMessage("");
                   setError("");
                 }}
+                onBlur={() => void checkStoreName()}
                 placeholder="client@example.com"
                 className="mt-2.5 h-11 w-full rounded-xl border border-white/[0.09] bg-black/20 px-3.5 text-[11px] text-[#e5dfd9] outline-none placeholder:text-[#3f3a36] focus:border-[#ff5a1f]/50"
               />
