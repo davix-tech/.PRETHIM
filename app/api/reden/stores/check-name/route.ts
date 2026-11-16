@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
+import { getAuthenticatedDeveloperEmail } from "@/lib/reden/developer-auth";
 import {
   REDEN_API_URL,
   fetchWithTimeout,
@@ -39,8 +38,7 @@ function jsonError(error: string, status: number) {
 
 export async function POST(req: Request) {
   try {
-    const session = await getServerSession(authOptions);
-    const developerEmail = cleanString(session?.user?.email).toLowerCase();
+    const developerEmail = (await getAuthenticatedDeveloperEmail()) || "";
 
     if (!developerEmail) {
       return jsonError("Authentication required.", 401);
