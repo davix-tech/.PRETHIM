@@ -1,270 +1,102 @@
 import { NextResponse } from "next/server";
-import crypto from "crypto";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
-import { createClient } from "@/lib/supabase/server";
+import { getAdminSupabase } from "@/lib/reden/connection";
 
 export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
 
-type RequestBody = {
-  connectionId?: unknown;
-  expiresInDays?: unknown;
-};
-
-function hashToken(token: string) {
-  return crypto
-    .createHash("sha256")
-    .update(token)
-    .digest("hex");
+function cleanString(value: unknown): string {
+  return typeof value === "string" ? value.trim() : "";
 }
 
 export async function POST(req: Request) {
   try {
     const session = await getServerSession(authOptions);
+    const developerEmail = cleanString(session?.user?.email).toLowerCase();
 
-    if (!session?.user) {
+    if (!developerEmail) {
       return NextResponse.json(
-        {
-          ok: false,
-          error: "Authentication required.",
-        },
-        { status: 401 }
+        { ok: false, error: "Authentication required." },
+        { status: 401, headers: { "Cache-Control": "no-store" } }
       );
     }
 
-    const email = session.user.email
-      ?.trim()
-      .toLowerCase();
+    const body = await req.json().catch(() => ({}));
+    const storeName = cleanString(body?.storeName);
+    const clientEmail = cleanString(body?.clientEmail).toLowerCase();
 
-    if (!email) {
+    if (!storeName) {
       return NextResponse.json(
-        {
-          ok: false,
-          error:
-            "Your account does not have an email address.",
-        },
+        { ok: false, error: "A storefront name is required." },
         { status: 400 }
       );
     }
 
-    const body: RequestBody = await req
-      .json()
-      .catch(() => ({}));
-
-    const connectionId =
-      typeof body.connectionId === "string"
-        ? body.connectionId.trim()
-        : "";
-
-    if (!connectionId) {
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(clientEmail)) {
       return NextResponse.json(
-        {
-          ok: false,
-          error: "A connection ID is required.",
-        },
+        { ok: false, error: "A valid client email is required." },
         { status: 400 }
       );
     }
 
-    const expiresInDays =
-      typeof body.expiresInDays === "number" &&
-      Number.isFinite(body.expiresInDays)
-        ? Math.min(
-            Math.max(body.expiresInDays, 1),
-            30
-          )
-        : 7;
+    const supabase = getAdminSupabase();
+    const pattern = storeName.replace(/[\\%_]/g, "\\$&");
 
-    /*
-     * createClient() is synchronous.
-     *
-     * Do NOT use:
-     *
-     * const supabase = await createClient();
-     */
-    const supabase = createClient();
-
-    /*
-     * Verify that the authenticated DEVELOPER owns the
-     * requested REDEN connection.
-     *
-     * IMPORTANT: reden_connections.user_email is the CLIENT's
-     * email (the storefront owner), not the developer's.
-     * The authenticated developer is stored separately in
-     * developer_email. Matching user_email against the
-     * developer's session email would never succeed unless
-     * the developer happened to also be the client -- that
-     * was the bug that made this check always report
-     * "you do not have permission" for a legitimate developer.
-     */
-    const {
-      data: connection,
-      error: connectionError,
-    } = await supabase
+    const { data: connection, error } = await supabase
       .from("reden_connections")
-      .select(
-        "id, site_id, store_name, user_email, developer_email, status"
-      )
-      .eq("id", connectionId)
-      .eq("developer_email", email)
+      .select("id, store_name, site_id, status, user_email, created_at, updated_at")
+      .eq("developer_email", developerEmail)
+      .eq("user_email", clientEmail)
+      .ilike("store_name", pattern)
+      .order("created_at", { ascending: false })
+      .limit(1)
       .maybeSingle();
 
-    if (connectionError) {
-      console.error(
-        "[REDEN INVITE] Failed to load connection:",
-        connectionError
-      );
-
+    if (error) {
+      console.error("[REDEN STORE FIND] Database lookup failed:", {
+        message: error.message,
+        code: error.code,
+      });
       return NextResponse.json(
-        {
-          ok: false,
-          error:
-            "Unable to verify the storefront.",
-        },
+        { ok: false, error: "Unable to look up this storefront." },
         { status: 500 }
       );
     }
 
     if (!connection) {
       return NextResponse.json(
-        {
-          ok: false,
-          error:
-            "You do not have permission to create an invite for this storefront.",
-        },
-        { status: 403 }
+        { ok: true, found: false, store: null },
+        { status: 200, headers: { "Cache-Control": "no-store" } }
       );
     }
-
-    /*
-     * Generate a cryptographically secure token.
-     *
-     * Only the SHA-256 hash is stored in Supabase.
-     * The raw token exists only in the returned URL.
-     */
-    const token = crypto
-      .randomBytes(32)
-      .toString("hex");
-
-    const tokenHash = hashToken(token);
-
-    const expiresAt = new Date(
-      Date.now() +
-        expiresInDays *
-          24 *
-          60 *
-          60 *
-          1000
-    ).toISOString();
-
-    /*
-     * Expire all previous unaccepted invites
-     * belonging to this storefront.
-     */
-    const { error: revokeError } =
-      await supabase
-        .from("store_invites")
-        .update({
-          expires_at: new Date().toISOString(),
-        })
-        .eq(
-          "connection_id",
-          connection.id
-        )
-        .is("accepted_at", null);
-
-    if (revokeError) {
-      console.error(
-        "[REDEN INVITE] Failed to invalidate previous invites:",
-        revokeError
-      );
-
-      return NextResponse.json(
-        {
-          ok: false,
-          error:
-            "Unable to create the invite.",
-        },
-        { status: 500 }
-      );
-    }
-
-    /*
-     * Store the hashed token.
-     */
-    const {
-      data: invite,
-      error: inviteError,
-    } = await supabase
-      .from("store_invites")
-      .insert({
-        connection_id: connection.id,
-        token_hash: tokenHash,
-        created_by: email,
-        expires_at: expiresAt,
-      })
-      .select(
-        "id, expires_at, created_at"
-      )
-      .single();
-
-    if (inviteError) {
-      console.error(
-        "[REDEN INVITE] Failed to create invite:",
-        inviteError
-      );
-
-      return NextResponse.json(
-        {
-          ok: false,
-          error:
-            "Unable to create the invite.",
-        },
-        { status: 500 }
-      );
-    }
-
-    const origin = new URL(req.url).origin;
-
-    /*
-     * IMPORTANT: matches the same path used by
-     * app/api/reden/invites/route.ts and by the actual
-     * invite-acceptance page at /invites/[token]. This was
-     * previously /invite/${token} (singular) here, which would
-     * have produced a broken link for any invite created
-     * through this route.
-     */
-    const inviteUrl =
-      `${origin}/invites/${token}`;
-
-    return NextResponse.json({
-      ok: true,
-
-      invite: {
-        id: invite.id,
-        url: inviteUrl,
-        expiresAt: invite.expires_at,
-        createdAt: invite.created_at,
-      },
-
-      connection: {
-        id: connection.id,
-        siteId: connection.site_id,
-        storeName: connection.store_name,
-      },
-    });
-  } catch (error) {
-    console.error(
-      "[REDEN INVITE] Unexpected error:",
-      error
-    );
 
     return NextResponse.json(
       {
-        ok: false,
-        error:
-          "Unable to create the invite.",
+        ok: true,
+        found: true,
+        store: {
+          id: connection.id,
+          name: connection.store_name,
+          siteId: connection.site_id,
+          status: connection.status,
+          clientEmail: connection.user_email,
+          createdAt: connection.created_at,
+          updatedAt: connection.updated_at,
+        },
       },
+      {
+        status: 200,
+        headers: { "Cache-Control": "no-store" },
+      }
+    );
+  } catch (error) {
+    console.error(
+      "[REDEN STORE FIND] Unexpected error:",
+      error instanceof Error ? error.message : error
+    );
+    return NextResponse.json(
+      { ok: false, error: "Unable to look up this storefront." },
       { status: 500 }
     );
   }
