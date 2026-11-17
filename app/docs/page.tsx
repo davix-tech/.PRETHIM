@@ -12,9 +12,11 @@ Terminal,
 } from "lucide-react";
 
 export const metadata = {
-title: "Documentation | PRETHIM",
-description:
-"Technical documentation for PRETHIM and REDEN, adaptive decision infrastructure for real-time software.",
+  title: "Documentation",
+  description:
+    "Technical documentation for PRETHIM and REDEN, adaptive decision infrastructure for real-time software.",
+  alternates: { canonical: "/docs" },
+  openGraph: { url: "/docs" },
 };
 
 const SECTIONS = [
