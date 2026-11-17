@@ -1,9 +1,11 @@
 import Link from "next/link";
 
 export const metadata = {
-  title: "Privacy Policy | PRETHIM",
+  title: "Privacy Policy",
   description:
     "How PRETHIM handles personal information across its website, software, APIs, and services.",
+  alternates: { canonical: "/privacy" },
+  openGraph: { url: "/privacy" },
 };
 
 const sections = [
