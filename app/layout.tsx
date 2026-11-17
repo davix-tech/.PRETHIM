@@ -3,7 +3,7 @@ import "./globals.css";
 import Providers from "./providers";
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://www.prethim.name.ng"),
+  metadataBase: new URL("https://prethim.site"),
 
   title: {
     default: "PRETHIM — Adaptive Decision Infrastructure",
@@ -32,14 +32,14 @@ export const metadata: Metadata = {
   },
 
   alternates: {
-    canonical: "https://www.prethim.name.ng",
+    canonical: "https://prethim.site",
   },
 
   openGraph: {
     title: "PRETHIM — Adaptive Decision Infrastructure",
     description:
       "Adaptive decision infrastructure for continuous trajectory evaluation and real-time behavioral optimization.",
-    url: "https://www.prethim.name.ng",
+    url: "https://prethim.site",
     siteName: "PRETHIM",
     locale: "en_US",
     type: "website",
