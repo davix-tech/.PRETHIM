@@ -1,8 +1,10 @@
 import Link from "next/link";
 
 export const metadata = {
-  title: "Terms of Service | PRETHIM",
+  title: "Terms of Service",
   description: "Terms governing access to and use of PRETHIM websites, software, APIs, and services.",
+  alternates: { canonical: "/terms" },
+  openGraph: { url: "/terms" },
 };
 
 const sections = [
