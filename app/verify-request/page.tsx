@@ -1,3 +1,10 @@
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Check your inbox",
+  robots: { index: false, follow: false },
+};
+
 export default function VerifyRequestPage() {
   return (
     <main className="min-h-screen bg-[#0a0a0a] flex items-center justify-center px-4">
