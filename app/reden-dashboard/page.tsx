@@ -34,7 +34,7 @@ import {
   Zap,
 } from "lucide-react";
 
-type Route = "overview" | "decisions" | "intelligence" | "settings";
+type Route = "overview" | "intelligence";
 
 type Message = {
   id: number;
@@ -85,25 +85,11 @@ const NAV_ITEMS = [
     key: "overview" as Route,
     label: "Overview",
     icon: LayoutDashboard,
-    number: "01",
-  },
-  {
-    key: "decisions" as Route,
-    label: "Decisions",
-    icon: Zap,
-    number: "02",
   },
   {
     key: "intelligence" as Route,
     label: "Intelligence",
     icon: Activity,
-    number: "03",
-  },
-  {
-    key: "settings" as Route,
-    label: "Settings",
-    icon: Settings,
-    number: "04",
   },
 ];
 
@@ -719,10 +705,6 @@ export default function RedenDashboardPage() {
                       : "text-white/40 hover:bg-white/[0.035]",
                   ].join(" ")}
                 >
-                  <span className="text-[9px] text-white/20">
-                    {item.number}
-                  </span>
-
                   <Icon
                     size={16}
                     className={
@@ -755,8 +737,6 @@ export default function RedenDashboardPage() {
           />
         )}
 
-        {activeRoute === "decisions" && <Decisions />}
-
         {activeRoute === "intelligence" && (
           <Intelligence
             input={input}
@@ -777,10 +757,6 @@ export default function RedenDashboardPage() {
             onSubmit={handleSubmit}
             onSuggestion={askQuestion}
           />
-        )}
-
-        {activeRoute === "settings" && (
-          <SettingsPage storeName={storeLabel} />
         )}
 
         {/* QUIET PRETHIM BRAND CLOSURE */}
@@ -1200,9 +1176,6 @@ function Composer({
   return (
     <form onSubmit={onSubmit}>
       <div className="group flex min-h-[64px] items-center rounded-2xl border border-white/[0.09] bg-[#101010] px-4 shadow-[0_20px_70px_rgba(0,0,0,0.35)] transition duration-300 focus-within:border-[#C97C3E]/25">
-        <div className="mr-3 hidden h-7 w-7 items-center justify-center rounded-lg border border-white/[0.05] bg-white/[0.025] sm:flex">
-          <Activity size={13} className="text-white/20" />
-        </div>
         <input
           value={input}
           onChange={(event) => setInput(event.target.value)}
