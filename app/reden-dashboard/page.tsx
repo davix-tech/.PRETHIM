@@ -841,7 +841,7 @@ function Overview({
               </div>
             </details>)}
           </div>
-          <p className="mt-4 text-[10px] leading-5 text-white/25">Examples are prompts to explore. REDEN's answer depends on the data available for your store and its current capabilities.</p>
+          <p className="mt-4 text-[10px] leading-5 text-white/25">Examples are prompts to explore. REDEN&apos;s answer depends on the data available for your store and its current capabilities.</p>
         </div>
       </details>
 
