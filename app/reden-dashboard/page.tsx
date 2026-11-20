@@ -815,9 +815,11 @@ function Overview({
         <p className="mt-4 max-w-xl text-[13px] leading-6 text-white/40">A live view of visits, purchases and revenue recorded by your connected store.</p>
       </div>
 
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <MetricCard label="Visitors" value={visitorsValue} detail="People visiting today" icon={Users} />
         <MetricCard label="Purchases" value={purchasesValue} detail="Orders recorded today" icon={TrendingUp} />
+      </div>
+      <div className="mt-3">
         <MetricCard label="Revenue" value={revenueValue} detail="Sales value recorded today" icon={CircleDollarSign} subdued />
       </div>
 
