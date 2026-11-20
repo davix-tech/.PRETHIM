@@ -710,7 +710,7 @@ export default function RedenDashboardPage() {
           MOBILE BOTTOM NAV
       ===================================================== */}
 
-      <nav className="fixed bottom-3 left-3 right-3 z-40 rounded-2xl border border-white/[0.08] bg-[#11100f]/90 p-1.5 shadow-[0_20px_70px_rgba(0,0,0,0.45)] backdrop-blur-2xl lg:hidden">
+      <nav className={["fixed bottom-3 left-3 right-3 z-40 rounded-2xl border border-white/[0.08] bg-[#11100f]/90 p-1.5 shadow-[0_20px_70px_rgba(0,0,0,0.45)] backdrop-blur-2xl lg:hidden", activeRoute === "intelligence" ? "hidden" : ""].join(" ")}>
         <div className="flex">
           {NAV_ITEMS.map((item) => {
             const active = activeRoute === item.key;
@@ -1002,6 +1002,7 @@ function Intelligence({
                 <h1 className="text-[34px] font-medium leading-[1.08] tracking-[-0.055em] text-white/90 md:text-[48px]">What should we<br /><span className="text-white/35">look into today?</span></h1>
                 <p className="mt-4 max-w-xl text-[13px] leading-6 text-white/35">Ask a direct question about your store. REDEN separates observed facts from interpretation and identifies where the available evidence has limits.</p>
                 <div className="mt-7 grid gap-2 sm:grid-cols-2">{SUGGESTIONS.map((suggestion) => <button key={suggestion} type="button" onClick={() => onSuggestion(suggestion)} className="rounded-xl border border-white/[0.08] bg-white/[0.025] px-4 py-3 text-left text-[11px] text-white/50 transition hover:border-[#C97C3E]/30 hover:bg-[#C97C3E]/[0.05] hover:text-white/80">{suggestion}</button>)}</div>
+                <div className="mt-8"><Composer input={input} setInput={setInput} onSubmit={onSubmit} isThinking={isThinking} /><div className="mt-2 text-center text-[8px] text-white/20">Answers are grounded in the store evidence currently available.</div></div>
                 {requestError && <div role="status" className="mt-5 rounded-xl border border-white/[0.07] bg-white/[0.025] px-4 py-3 text-[11px] leading-6 text-white/45">{requestError}</div>}
               </div>
             </div>
@@ -1014,9 +1015,9 @@ function Intelligence({
             </div>
           )}
         </div>
-        <div className="shrink-0 border-t border-white/[0.06] bg-[#090807]/95 px-4 py-3 backdrop-blur-2xl lg:px-6">
+        {hasConversation && <div className="shrink-0 border-t border-white/[0.06] bg-[#090807]/95 px-4 py-3 backdrop-blur-2xl lg:px-6">
           <div className="mx-auto max-w-[760px]"><Composer input={input} setInput={setInput} onSubmit={onSubmit} isThinking={isThinking} /><div className="mt-2 text-center text-[8px] text-white/20">Answers are grounded in the store evidence currently available.</div></div>
-        </div>
+        </div>}
       </section>
     </div>
   );
@@ -1056,20 +1057,20 @@ function Composer({
 }) {
   return (
     <form onSubmit={onSubmit}>
-      <div className="group flex min-h-[64px] items-center rounded-2xl border border-white/[0.09] bg-[#101010] px-4 shadow-[0_20px_70px_rgba(0,0,0,0.35)] transition duration-300 focus-within:border-[#C97C3E]/25">
+      <div className="group flex min-h-[64px] items-center rounded-[28px] border border-white/[0.10] bg-[#12100f] px-5 shadow-[0_24px_80px_rgba(0,0,0,0.4)] transition duration-300 focus-within:border-[#C97C3E]/35 focus-within:bg-[#151210]">
         <input
           value={input}
           onChange={(event) => setInput(event.target.value)}
           disabled={isThinking}
           placeholder="Ask REDEN..."
           autoComplete="off"
-          className="min-w-0 flex-1 bg-transparent px-1 py-4 text-[13px] text-white outline-none placeholder:text-white/20 disabled:opacity-50"
+          className="min-w-0 flex-1 bg-transparent px-1 py-5 text-[14px] text-white outline-none placeholder:text-white/25 disabled:opacity-50"
         />
         <button
           type="submit"
           disabled={!input.trim() || isThinking}
           aria-label="Send question"
-          className="ml-3 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-black transition hover:brightness-110 disabled:bg-white/[0.07] disabled:text-white/20"
+          className="ml-3 flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl text-black transition hover:brightness-110 disabled:bg-white/[0.07] disabled:text-white/20"
           style={{ background: COPPER }}
         >
           <ChevronRight size={17} strokeWidth={2.4} />
