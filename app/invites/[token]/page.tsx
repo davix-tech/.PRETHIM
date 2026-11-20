@@ -132,3 +132,4 @@ export default function InvitePage() {
       </section>
     </main>
   );
+}
