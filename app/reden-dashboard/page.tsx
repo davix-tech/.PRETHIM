@@ -759,18 +759,18 @@ export default function RedenDashboardPage() {
           />
         )}
 
-        {/* QUIET PRETHIM BRAND CLOSURE */}
-
-        <div className="pointer-events-none mx-auto flex w-full max-w-[1180px] justify-end px-5 pb-28 pt-4 md:px-8 lg:pb-16">
-          <Image
-            src="/prethim-watermark.png"
-            alt="PRETHIM"
-            width={700}
-            height={180}
-            className="h-auto w-[150px] object-contain opacity-[0.045] md:w-[190px]"
-          />
-        </div>
       </main>
+
+      {/* QUIET PRETHIM SIGNATURE */}
+      <div className="pointer-events-none fixed bottom-[88px] right-5 z-20 md:right-8 lg:bottom-5">
+        <Image
+          src="/prethim-watermark.png"
+          alt="PRETHIM"
+          width={700}
+          height={180}
+          className="h-auto w-[118px] object-contain opacity-[0.055] md:w-[150px]"
+        />
+      </div>
 
       {/* =====================================================
           MOBILE BOTTOM NAV
