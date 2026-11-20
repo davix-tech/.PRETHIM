@@ -776,143 +776,88 @@ function Overview({
   metricsLoading: boolean;
   metricsError: string | null;
 }) {
-  const revenueValue = metricsLoading
-    ? "—"
-    : metricsError || !metrics
-    ? "Unavailable"
-    : formatNaira(metrics.revenue);
+  const revenueValue = metricsLoading ? "—" : metricsError || !metrics ? "Unavailable" : formatNaira(metrics.revenue);
+  const visitorsValue = metricsLoading ? "—" : metricsError || !metrics ? "—" : formatCount(metrics.visitors);
+  const purchasesValue = metricsLoading ? "—" : metricsError || !metrics ? "—" : formatCount(metrics.purchases);
 
-  const visitorsValue = metricsLoading
-    ? "—"
-    : metricsError || !metrics
-    ? "—"
-    : formatCount(metrics.visitors);
-
-  const purchasesValue = metricsLoading
-    ? "—"
-    : metricsError || !metrics
-    ? "—"
-    : formatCount(metrics.purchases);
+  const questionGroups = [
+    { title: "Sales & revenue", questions: [
+      "How much did I earn today?", "How much revenue did my store make this week?", "How much did I earn this month?", "How many purchases did I make today?", "How many orders have I received this week?", "What is my revenue so far?", "Are my sales increasing or decreasing?", "What does my revenue tell me?", "Why might my revenue be low?", "What should I focus on to increase sales?", "How are sales performing today?", "How did sales perform yesterday?", "Compare today's sales with yesterday's.", "Compare this week's sales with last week.", "What periods have had the most sales?", "Are purchases happening consistently?", "What can I learn from my recent sales?", "What should I investigate about my revenue?", "What are the strongest sales signals?", "What could be holding back my sales?", "How can I improve the number of purchases?", "What is happening with my orders?", "What do my purchase numbers mean?", "Is there enough data to understand my sales?", "Give me a summary of my store's sales."
+    ]},
+    { title: "Visitors & traffic", questions: [
+      "How many people visited my store today?", "How many visitors did I have this week?", "How many visitors did I have this month?", "Is my traffic growing?", "Why might visitor numbers be low?", "What does my visitor count tell me?", "Are people visiting but not buying?", "How is visitor activity today?", "Compare visitors today and yesterday.", "Compare traffic this week and last week.", "What should I do to attract more visitors?", "Are visitors showing interest in my store?", "What can I learn from the traffic I have?", "Is my store getting enough visitors to make sales?", "What could cause a drop in visits?", "What should I investigate about my traffic?", "When has my store received more visitors?", "What does visitor activity suggest?", "How can I improve store traffic?", "Are visitors reaching my store consistently?", "Give me a visitor summary.", "What traffic patterns can you identify?", "What should I prioritize to get more visitors?", "Can my current traffic support more sales?", "How has store activity changed?"
+    ]},
+    { title: "Conversion & purchase behaviour", questions: [
+      "How many visitors actually bought something?", "What is my conversion rate?", "Are visitors converting into buyers?", "Why are visitors not purchasing?", "What could improve my conversion rate?", "What does my purchase rate mean?", "Are my visitors showing buying intent?", "What happens between visiting and purchasing?", "Are there signs of purchase interest?", "How can I turn more visitors into customers?", "Is my conversion performance improving?", "What should I examine if purchases are low?", "Do my visitors seem ready to buy?", "What might prevent a visitor from purchasing?", "How can I encourage hesitant buyers?", "What do my purchases say about customer demand?", "Is there a gap between traffic and sales?", "What can I do with low conversion?", "What does the available behaviour suggest about buying?", "Are customers completing purchases?", "What should I watch in conversion?", "Explain my conversion rate simply.", "What could be affecting purchase decisions?", "How can I improve the customer buying journey?", "Summarize my conversion performance."
+    ]},
+    { title: "Customer intent & behaviour", questions: [
+      "What customer behaviour is happening in my store?", "Are shoppers showing buying intent?", "What behaviour suggests a customer is interested?", "What behaviour suggests someone may be hesitant?", "What are customers doing before buying?", "What actions suggest a visitor is considering a purchase?", "How can I understand customer interest?", "What behaviour should I pay attention to?", "What does customer activity suggest?", "Are customers interacting with products?", "What patterns in visitor behaviour can you see?", "What can behaviour tell me about sales?", "How do customers move through my store?", "What behaviour could be worth acting on?", "Are there signs customers are losing interest?", "What should I know about shopper intent?", "How can I respond to customer hesitation?", "What customer signals matter most?", "Explain the behaviour recorded in my store.", "What actions are customers taking?", "How should I interpret shopper activity?", "What might customer actions mean for my business?", "What behaviour could lead to a sale?", "What should I investigate in customer behaviour?", "Summarize the customer behaviour you can see."
+    ]},
+    { title: "Cart activity & recovery", questions: [
+      "Are customers adding products to their carts?", "What does cart activity tell me?", "Are there signs of abandoned carts?", "Why might shoppers abandon their carts?", "How can I recover abandoned carts?", "What should I know about cart abandonment?", "Are shoppers showing cart intent?", "What can I do when customers leave without buying?", "How does cart activity relate to sales?", "What should I investigate about carts?", "What could encourage shoppers to complete their orders?", "What behaviour happens before a cart is abandoned?", "Are cart actions leading to purchases?", "How can cart recovery improve sales?", "What does the available cart data show?", "What can I learn from cart activity?", "How should I respond to abandoned cart signals?", "What may be stopping shoppers at the cart?", "What is happening with customer carts?", "How can I reduce abandoned carts?", "What cart behaviour deserves attention?", "Are customers adding items but not buying?", "Explain my cart activity.", "What should I pay attention to around carts?", "Summarize cart-related activity."
+    ]},
+    { title: "Discounts & incentives", questions: [
+      "When might a discount help me make a sale?", "How can I encourage a hesitant buyer?", "Would a discount be worth considering?", "What is low purchase intent?", "How can incentives help conversion?", "What should I consider before offering a discount?", "Could a discount encourage more purchases?", "How can I avoid discounting unnecessarily?", "What behaviour may indicate a shopper needs an incentive?", "How do incentives relate to customer intent?", "What can REDEN do when purchase intent is low?", "How should I think about discounts?", "When should I avoid offering discounts?", "What could motivate a customer to buy?", "How can I use incentives thoughtfully?", "What does low intent suggest?", "What signals could justify a promotion?", "How can I make an incentive more relevant?", "What should I know about REDEN's incentive actions?", "How do discounts fit into conversion?", "What can I learn about incentive-related activity?", "How can I encourage a purchase without over-discounting?", "What customer signals could inform an incentive?", "Explain incentive decisions in simple terms.", "Summarize what I should consider about discounts."
+    ]},
+    { title: "Store performance & diagnosis", questions: [
+      "How is my store doing?", "What happened in my store today?", "What should I pay attention to?", "What is going well in my store?", "What needs improvement?", "What is the biggest issue visible in my data?", "What should I do next?", "Give me a business performance summary.", "What does my current data tell me?", "What are the important changes in my store?", "What could explain low sales?", "What should I investigate first?", "Where might I be losing sales?", "What opportunities can I identify?", "What is the most useful action to take today?", "What is happening with my store activity?", "Explain my store performance.", "What should I improve first?", "What risks are visible in my store data?", "What patterns can you identify?", "What is the strongest insight from my data?", "How can I improve my store?", "What is holding my store back?", "What should I monitor going forward?", "Summarize what is happening in my business."
+    ]},
+    { title: "REDEN actions & understanding", questions: [
+      "What can REDEN do for my store?", "How does REDEN help me improve sales?", "What does REDEN analyse?", "How does REDEN understand customer intent?", "How does REDEN respond to abandoned carts?", "What actions can REDEN take?", "What data does REDEN use to answer me?", "Can REDEN explain its recommendations?", "How does REDEN decide when to act?", "What is REDEN monitoring in my store?", "What does REDEN know about my store today?", "How can I ask REDEN better questions?", "Can REDEN help me understand my customers?", "What does REDEN do when it sees low intent?", "How does REDEN help merchants?", "What should I ask REDEN?", "Can REDEN explain my store data in simple language?", "What are REDEN's current capabilities?", "What store questions can REDEN investigate?", "What does REDEN need to provide a reliable answer?", "How does REDEN avoid guessing?", "What does REDEN do with store behaviour signals?", "Can REDEN help me decide what to do next?", "What can I learn using REDEN?", "Explain REDEN's role in my store."
+    ]},
+  ];
 
   return (
     <div className="mx-auto w-full max-w-[1180px] px-5 pb-28 pt-8 md:px-8 md:pt-10 lg:pb-16">
-      {/* HERO */}
+      <div className="mb-8">
+        <div className="mb-4 flex items-center gap-3"><span className="text-[10px]" style={{ color: `${COPPER}99` }}>Today</span></div>
+        <h1 className="max-w-3xl text-[38px] font-semibold leading-[0.98] tracking-[-0.06em] text-white md:text-[54px]">The business,<br /><span className="text-white/35">as REDEN sees it.</span></h1>
+        <p className="mt-4 max-w-xl text-[13px] leading-6 text-white/40">A live view of visits, purchases and revenue recorded by your connected store.</p>
+      </div>
 
-      <div className="mb-10 grid gap-8 lg:grid-cols-[1fr_auto] lg:items-end">
-        <div>
-          <div className="mb-5 flex items-center gap-3">
-            <span className="text-[10px] uppercase tracking-[0.18em] text-white/25">
-              01 / Overview
-            </span>
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+        <MetricCard label="Visitors" value={visitorsValue} detail="People visiting today" icon={Users} />
+        <MetricCard label="Purchases" value={purchasesValue} detail="Orders recorded today" icon={TrendingUp} />
+        <MetricCard label="Revenue" value={revenueValue} detail="Sales value recorded today" icon={CircleDollarSign} subdued />
+      </div>
 
-            <span className="h-px w-8 bg-white/[0.08]" />
+      <button type="button" onClick={onOpenIntelligence} className="group mt-4 flex w-full items-center justify-between rounded-2xl border border-[#C97C3E]/[0.2] bg-[#C97C3E]/[0.055] px-5 py-4 text-left transition hover:border-[#C97C3E]/35 hover:bg-[#C97C3E]/[0.09]">
+        <span className="flex items-center gap-3"><Activity size={16} className="text-[#DFA16E]" /><span><span className="block text-[13px] font-medium text-[#DFA16E]">Ask REDEN</span><span className="mt-1 block text-[11px] text-white/35">Understand sales, customer behaviour and what to do next.</span></span></span><ChevronRight size={16} className="text-[#DFA16E] transition-transform group-hover:translate-x-1" />
+      </button>
 
-            <span
-              className="text-[10px]"
-              style={{ color: `${COPPER}99` }}
-            >
-              Today
-            </span>
+      <details className="mt-6 group rounded-2xl border border-white/[0.08] bg-white/[0.018]">
+        <summary className="flex cursor-pointer list-none items-center justify-between gap-4 px-5 py-5 [&::-webkit-details-marker]:hidden">
+          <span><span className="block text-[14px] font-medium text-white/80">Questions REDEN can help answer</span><span className="mt-1 block text-[11px] text-white/35">Browse 200 example questions, grouped by topic.</span></span>
+          <ChevronRight size={18} className="shrink-0 text-white/35 transition-transform group-open:rotate-90" />
+        </summary>
+        <div className="border-t border-white/[0.06] px-4 py-4 md:px-5">
+          <div className="space-y-3">
+            {questionGroups.map((group) => <details key={group.title} className="rounded-xl bg-black/20 px-3 py-3">
+              <summary className="flex cursor-pointer list-none items-center justify-between gap-3 text-[12px] font-medium text-white/65 [&::-webkit-details-marker]:hidden">{group.title}<span className="text-[10px] text-white/25">{group.questions.length} questions</span></summary>
+              <div className="mt-3 space-y-1">
+                {group.questions.map((question) => <button key={question} type="button" onClick={() => onAsk(question)} className="block w-full rounded-lg px-3 py-2.5 text-left text-[11px] leading-5 text-white/45 transition hover:bg-white/[0.035] hover:text-white/80">{question}</button>)}
+              </div>
+            </details>)}
           </div>
-
-          <h1 className="max-w-3xl text-[38px] font-semibold leading-[0.98] tracking-[-0.06em] text-white md:text-[54px]">
-            The business,
-            <br />
-            <span className="text-white/35">
-              as REDEN sees it.
-            </span>
-          </h1>
-
-          <p className="mt-5 max-w-xl text-[13px] leading-6 text-white/35">
-            REDEN continuously evaluates activity across your store and
-            surfaces the signals that deserve your attention.
-          </p>
+          <p className="mt-4 text-[10px] leading-5 text-white/25">Examples are prompts to explore. REDEN's answer depends on the data available for your store and its current capabilities.</p>
         </div>
+      </details>
 
-        <button
-          type="button"
-          onClick={onOpenIntelligence}
-          className="group flex w-fit items-center gap-3 rounded-2xl border border-[#C97C3E]/[0.18] bg-[#C97C3E]/[0.045] px-5 py-3.5 text-[11px] font-medium text-[#DFA16E] transition duration-300 hover:border-[#C97C3E]/30 hover:bg-[#C97C3E]/[0.08]"
-        >
-          <Activity size={14} />
-          Ask REDEN
-          <ChevronRight
-            size={14}
-            className="transition-transform group-hover:translate-x-0.5"
-          />
-        </button>
-      </div>
-
-      {/* METRICS */}
-
-      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-
-
-        <MetricCard
-          number="01"
-          label="Visitors"
-          value={visitorsValue}
-          detail="Today"
-          icon={Users}
-        />
-
-
-
-        <MetricCard
-          number="02"
-          label="Purchases"
-          value={purchasesValue}
-          detail="Today"
-          icon={TrendingUp}
-        />
-
-        <MetricCard
-          number="03"
-          label="Revenue"
-          value={revenueValue}
-          detail="Today"
-          icon={CircleDollarSign}
-          subdued
-        />
-      </div>
-
-      {/* REVENUE INTELLIGENCE */}
-      <section className="mt-4 grid gap-4 lg:grid-cols-[1.2fr_0.8fr]">
-        <div className="rounded-2xl border border-white/[0.07] bg-white/[0.018] p-5 md:p-6">
-          <div className="text-[10px] uppercase tracking-[0.14em] text-white/30">Revenue intelligence</div>
-          <h2 className="mt-4 text-xl font-medium tracking-[-0.035em] text-white/80">{metricsLoading ? "Reading your store data…" : metricsError || !metrics ? "Business data is unavailable." : metrics.visitors === 0 && metrics.purchases === 0 ? "REDEN is waiting for meaningful activity." : "Your latest store metrics are ready to examine."}</h2>
-          <p className="mt-3 max-w-xl text-[12px] leading-6 text-white/35">{metricsError ? "REDEN could not retrieve the current metrics. Check the store connection; unavailable data is not reported as zero." : !metrics && !metricsLoading ? "Connect a storefront and send events to make revenue intelligence available here." : "Ask REDEN to explain the figures and identify changes worth investigating. Answers should stay within what the available evidence supports."}</p>
-          <button type="button" onClick={() => onAsk("Give me an evidence-based overview of my store performance and explain what deserves attention.")} className="mt-5 inline-flex items-center gap-2 text-[11px] font-medium text-[#C97C3E] transition hover:text-[#DFA16E]">Examine the evidence <ArrowUpRight size={13} /></button>
-        </div>
-        <div className="rounded-2xl border border-white/[0.07] bg-white/[0.018] p-5 md:p-6">
-          <div className="text-[10px] uppercase tracking-[0.14em] text-white/30">Signal status</div>
-          <div className="mt-4 text-lg font-medium tracking-[-0.03em] text-white/75">{metricsLoading ? "Checking available evidence" : metricsError || !metrics ? "Unable to verify signals" : "No verified signal summary"}</div>
-          <p className="mt-3 text-[12px] leading-6 text-white/35">This dashboard currently receives aggregate metrics, not a live signal feed. REDEN will not invent a signal or claim that no signals exist when that feed is unavailable.</p>
-        </div>
-      </section>
-
-      {/* DECISION HISTORY */}
-      <section className="mt-4 rounded-2xl border border-white/[0.07] bg-white/[0.018] p-5 md:p-6">
-        <div className="flex flex-wrap items-end justify-between gap-3"><div><div className="text-[10px] uppercase tracking-[0.14em] text-white/30">Decision history</div><h2 className="mt-2 text-[15px] font-medium text-white/75">What REDEN decided</h2></div><span className="text-[10px] text-white/25">Live records required</span></div>
-        <p className="mt-4 max-w-2xl text-[12px] leading-6 text-white/35">Decision records are not yet available through this dashboard view. No sample actions or invented statuses are shown here.</p>
+      <section className="mt-6 rounded-2xl border border-white/[0.07] bg-white/[0.018] p-5 md:p-6">
+        <h2 className="text-[13px] font-medium text-white/75">Store data</h2>
+        <p className="mt-2 text-[12px] leading-6 text-white/40">{metricsLoading ? "Refreshing today's store figures." : metricsError ? "Metrics couldn't be refreshed. Check your connection; unavailable figures aren't treated as zero." : !metrics ? "Connect your store to begin seeing activity." : metrics.visitors === 0 && metrics.purchases === 0 ? "No visitor or purchase activity has been recorded today yet." : "These figures reflect activity recorded today. Ask REDEN to explore the numbers, behaviour and possible next steps."}</p>
       </section>
     </div>
   );
 }
 
-/* =========================================================
-   METRIC
-========================================================= */
-
 function MetricCard({
-  number,
   label,
   value,
   detail,
   icon: Icon,
   subdued = false,
 }: {
-  number: string;
   label: string;
   value: string;
   detail: string;
@@ -921,10 +866,6 @@ function MetricCard({
 }) {
   return (
     <div className={["group relative overflow-hidden rounded-3xl border p-4 transition duration-300 md:p-5", subdued ? "border-white/[0.045] bg-white/[0.008]" : "border-white/[0.07] bg-white/[0.018] hover:border-white/[0.11] hover:bg-white/[0.025]"].join(" ")}>
-      <div className="absolute right-[-15px] top-[-22px] text-[76px] font-semibold leading-none tracking-[-0.08em] text-white/[0.018] transition duration-500 group-hover:text-[#C97C3E]/[0.035]">
-        {number}
-      </div>
-
       <div className="relative flex items-center justify-between">
         <span className="text-[10px] uppercase tracking-[0.12em] text-white/30">
           {label}
