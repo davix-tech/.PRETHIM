@@ -653,80 +653,14 @@ export default function RedenDashboardPage() {
           />
         </button>
 
-        <button
-          type="button"
-          onClick={() => setMobileMenuOpen((current) => !current)}
-          aria-label={mobileMenuOpen ? "Close menu" : "Open menu"}
-          className="flex h-9 w-9 items-center justify-center rounded-xl border border-white/[0.07] bg-white/[0.025]"
-        >
-          {mobileMenuOpen ? <X size={17} /> : <MoreHorizontal size={17} />}
-        </button>
+
       </header>
-
-      {/* =====================================================
-          MOBILE MENU
-      ===================================================== */}
-
-      {mobileMenuOpen && (
-        <div className="fixed inset-x-3 top-[70px] z-50 rounded-2xl border border-white/[0.08] bg-[#11100f]/95 p-2 shadow-2xl backdrop-blur-2xl lg:hidden">
-          <div className="flex items-center gap-3 border-b border-white/[0.06] px-4 py-4">
-            <Image
-              src="/icon.png"
-              alt="PRETHIM"
-              width={40}
-              height={40}
-              className="h-7 w-7 object-contain opacity-75"
-            />
-
-            <div>
-              <div className="text-[9px] uppercase tracking-[0.16em] text-white/20">
-                PRETHIM
-              </div>
-              <div className="mt-0.5 text-[10px] text-white/40">
-                Decision infrastructure
-              </div>
-            </div>
-          </div>
-
-          <div className="pt-2">
-            {NAV_ITEMS.map((item) => {
-              const active = activeRoute === item.key;
-              const Icon = item.icon;
-
-              return (
-                <button
-                  key={item.key}
-                  type="button"
-                  onClick={() => navigate(item.key)}
-                  className={[
-                    "flex w-full items-center gap-3 rounded-xl px-4 py-3.5 text-left transition",
-                    active
-                      ? "bg-[#C97C3E]/[0.08] text-white"
-                      : "text-white/40 hover:bg-white/[0.035]",
-                  ].join(" ")}
-                >
-                  <Icon
-                    size={16}
-                    className={
-                      active ? "text-[#C97C3E]" : "text-white/30"
-                    }
-                  />
-
-                  <span className="text-[12px] font-medium">
-                    {item.label}
-                  </span>
-                </button>
-              );
-            })}
-          </div>
-        </div>
-      )}
 
       {/* =====================================================
           MAIN
       ===================================================== */}
 
-      <main className="relative min-h-screen lg:pt-[96px]">
+      <main className={["relative min-h-screen lg:pt-[96px]", activeRoute === "intelligence" ? "h-[calc(100dvh-138px)] min-h-0 overflow-hidden lg:h-[calc(100dvh-96px)]" : ""].join(" ")}>
         {activeRoute === "overview" && (
           <Overview
             onAsk={askQuestion}
@@ -1084,9 +1018,15 @@ function Intelligence({
   onSelectConversation: (conversation: ConversationHistory) => void;
   onSubmit: (event: FormEvent<HTMLFormElement>) => void; onSuggestion: (question: string) => void;
 }) {
+  const scrollRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (el) el.scrollTo({ top: el.scrollHeight, behavior: "smooth" });
+  }, [messages, isThinking, requestError]);
+
   return (
-    <div className="relative flex min-h-[calc(100vh-62px)]">
-      <aside className={["fixed inset-y-[62px] left-0 z-40 w-[276px] border-r border-white/[0.07] bg-[#0d0b09] p-4 transition-all duration-200 lg:sticky lg:top-[96px] lg:z-10 lg:block lg:h-[calc(100vh-96px)] lg:translate-x-0", historyCollapsed ? "lg:w-[76px] lg:px-3" : "lg:w-[276px]", historyOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"].join(" ")}>
+    <div className="relative flex h-full min-h-0 overflow-hidden">
+      <aside className={["fixed inset-y-[62px] left-0 z-40 w-[276px] border-r border-white/[0.07] bg-[#0d0b09] p-4 transition-all duration-200 lg:sticky lg:top-0 lg:z-10 lg:block lg:h-full lg:translate-x-0", historyCollapsed ? "lg:w-[76px] lg:px-3" : "lg:w-[276px]", historyOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"].join(" ")}>
         <div className={["flex items-center", historyCollapsed ? "justify-center" : "justify-between"].join(" ")}>
           {!historyCollapsed && <div className="text-[10px] font-medium uppercase tracking-[0.15em] text-white/35">Intelligence</div>}
           <button type="button" onClick={onToggleCollapsed} className="hidden rounded-lg p-2 text-white/35 transition hover:bg-white/[0.05] hover:text-white/70 lg:block" aria-label={historyCollapsed ? "Expand conversation sidebar" : "Collapse conversation sidebar"} title={historyCollapsed ? "Expand sidebar" : "Collapse sidebar"}><ChevronRight size={15} className={historyCollapsed ? "" : "rotate-180"} /></button>
@@ -1104,7 +1044,7 @@ function Intelligence({
         {!historyCollapsed && <div className="absolute bottom-4 left-4 right-4 border-t border-white/[0.06] pt-3 text-[9px] leading-4 text-white/20">History is stored in this browser for this storefront.</div>}
       </aside>
       {historyOpen && <button type="button" aria-label="Close conversation history" onClick={onToggleHistory} className="fixed inset-0 z-30 bg-black/60 lg:hidden" />}
-      <section className="flex min-w-0 flex-1 flex-col">
+      <section className="flex min-w-0 min-h-0 flex-1 flex-col overflow-hidden">
         <div className="flex h-[64px] shrink-0 items-center justify-between border-b border-white/[0.06] px-4 md:px-8">
           <div className="flex items-center gap-3">
             <button type="button" onClick={onToggleHistory} className="rounded-lg border border-white/[0.07] p-2 text-white/45 hover:bg-white/[0.04] lg:hidden" aria-label="Open conversation history"><MoreHorizontal size={16} /></button>
@@ -1112,29 +1052,27 @@ function Intelligence({
           </div>
           <div className="flex items-center gap-2 text-[9px] text-white/30"><span className={["h-1.5 w-1.5 rounded-full", isOnline ? "bg-emerald-400/60" : "bg-white/20"].join(" ")} />{isOnline ? "Connected" : "Offline"}</div>
         </div>
-        <div className="relative flex min-h-0 flex-1 flex-col">
-          <div className="flex-1 overflow-y-auto px-4 pb-44 pt-8 md:px-8">
-            {!hasConversation ? (
-              <div className="mx-auto flex min-h-[calc(100vh-330px)] w-full max-w-[760px] flex-col justify-center">
-                <div className="max-w-2xl">
-                  <h1 className="text-[34px] font-medium leading-[1.08] tracking-[-0.055em] text-white/90 md:text-[48px]">What should we<br /><span className="text-white/35">look into today?</span></h1>
-                  <p className="mt-4 max-w-xl text-[13px] leading-6 text-white/35">Ask a direct question about your store. REDEN separates observed facts from interpretation and identifies where the available evidence has limits.</p>
-                  <div className="mt-7 grid gap-2 sm:grid-cols-2">{SUGGESTIONS.map((suggestion) => <button key={suggestion} type="button" onClick={() => onSuggestion(suggestion)} className="rounded-xl border border-white/[0.08] bg-white/[0.025] px-4 py-3 text-left text-[11px] text-white/50 transition hover:border-[#C97C3E]/30 hover:bg-[#C97C3E]/[0.05] hover:text-white/80">{suggestion}</button>)}</div>
-                  {requestError && <div role="status" className="mt-5 rounded-xl border border-white/[0.07] bg-white/[0.025] px-4 py-3 text-[11px] leading-6 text-white/45">{requestError}</div>}
-                </div>
+        <div ref={scrollRef} className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 pb-6 pt-8 md:px-8">
+          {!hasConversation ? (
+            <div className="mx-auto flex min-h-full w-full max-w-[760px] flex-col justify-center py-8">
+              <div className="max-w-2xl">
+                <h1 className="text-[34px] font-medium leading-[1.08] tracking-[-0.055em] text-white/90 md:text-[48px]">What should we<br /><span className="text-white/35">look into today?</span></h1>
+                <p className="mt-4 max-w-xl text-[13px] leading-6 text-white/35">Ask a direct question about your store. REDEN separates observed facts from interpretation and identifies where the available evidence has limits.</p>
+                <div className="mt-7 grid gap-2 sm:grid-cols-2">{SUGGESTIONS.map((suggestion) => <button key={suggestion} type="button" onClick={() => onSuggestion(suggestion)} className="rounded-xl border border-white/[0.08] bg-white/[0.025] px-4 py-3 text-left text-[11px] text-white/50 transition hover:border-[#C97C3E]/30 hover:bg-[#C97C3E]/[0.05] hover:text-white/80">{suggestion}</button>)}</div>
+                {requestError && <div role="status" className="mt-5 rounded-xl border border-white/[0.07] bg-white/[0.025] px-4 py-3 text-[11px] leading-6 text-white/45">{requestError}</div>}
               </div>
-            ) : (
-              <div className="mx-auto w-full max-w-[760px] space-y-10">
-                {!isOnline && <div className="rounded-xl border border-white/[0.07] bg-white/[0.025] px-4 py-3 text-[11px] leading-5 text-white/45">You&apos;re offline. REDEN will be available again when your connection returns.</div>}
-                {messages.map((message) => <div key={message.id}>{message.role === "user" ? <div className="flex justify-end"><div className="max-w-[88%] rounded-2xl bg-white/[0.07] px-4 py-3 text-[13px] leading-6 text-white/80 md:max-w-[78%]">{message.content}</div></div> : <div className="max-w-[760px]"><RichAnswer content={message.content} /></div>}</div>)}
-                {isThinking && <div className="flex items-center gap-2 py-1 text-[11px] text-white/30"><span className="h-1 w-1 animate-pulse rounded-full bg-[#C97C3E]/70" />Reviewing your question…</div>}
-                {requestError && <div role="status" className="max-w-[760px] rounded-xl border border-white/[0.07] bg-white/[0.025] px-4 py-3 text-[11px] leading-6 text-white/45">{requestError}</div>}
-              </div>
-            )}
-          </div>
-          <div className={["fixed inset-x-0 bottom-[76px] z-30 border-t border-white/[0.06] bg-[#090807]/95 px-4 py-4 backdrop-blur-2xl lg:bottom-0 lg:px-6", historyCollapsed ? "lg:left-[76px]" : "lg:left-[276px]"].join(" ")}>
-            <div className="mx-auto max-w-[760px]"><Composer input={input} setInput={setInput} onSubmit={onSubmit} isThinking={isThinking} /><div className="mt-2 text-center text-[8px] text-white/20">Answers are grounded in the store evidence currently available.</div></div>
-          </div>
+            </div>
+          ) : (
+            <div className="mx-auto w-full max-w-[760px] space-y-10 pb-6">
+              {!isOnline && <div className="rounded-xl border border-white/[0.07] bg-white/[0.025] px-4 py-3 text-[11px] leading-5 text-white/45">You&apos;re offline. REDEN will be available again when your connection returns.</div>}
+              {messages.map((message) => <div key={message.id}>{message.role === "user" ? <div className="flex justify-end"><div className="max-w-[88%] rounded-2xl bg-white/[0.07] px-4 py-3 text-[13px] leading-6 text-white/80 md:max-w-[78%]">{message.content}</div></div> : <div className="max-w-[760px]"><RichAnswer content={message.content} /></div>}</div>)}
+              {isThinking && <div className="flex items-center gap-2 py-1 text-[11px] text-white/30"><span className="h-1 w-1 animate-pulse rounded-full bg-[#C97C3E]/70" />Reviewing your question…</div>}
+              {requestError && <div role="status" className="max-w-[760px] rounded-xl border border-white/[0.07] bg-white/[0.025] px-4 py-3 text-[11px] leading-6 text-white/45">{requestError}</div>}
+            </div>
+          )}
+        </div>
+        <div className="shrink-0 border-t border-white/[0.06] bg-[#090807]/95 px-4 py-3 backdrop-blur-2xl lg:px-6">
+          <div className="mx-auto max-w-[760px]"><Composer input={input} setInput={setInput} onSubmit={onSubmit} isThinking={isThinking} /><div className="mt-2 text-center text-[8px] text-white/20">Answers are grounded in the store evidence currently available.</div></div>
         </div>
       </section>
     </div>
