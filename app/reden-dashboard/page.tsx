@@ -11,6 +11,7 @@ import {
 } from "react";
 import {
   Activity,
+  ArrowLeft,
   ArrowUpRight,
   BarChart3,
   Bell,
@@ -690,6 +691,7 @@ export default function RedenDashboardPage() {
             onSelectConversation={openConversation}
             onSubmit={handleSubmit}
             onSuggestion={askQuestion}
+            onBackToOverview={() => navigate("overview")}
           />
         )}
 
@@ -952,14 +954,14 @@ function Decisions() {
 function Intelligence({
   input, setInput, messages, isThinking, requestError, isOnline, hasConversation,
   conversations, activeConversationId, historyOpen, historyCollapsed, onToggleHistory,
-  onToggleCollapsed, onNewConversation, onSelectConversation, onSubmit, onSuggestion,
+  onToggleCollapsed, onNewConversation, onSelectConversation, onSubmit, onSuggestion, onBackToOverview,
 }: {
   input: string; setInput: (value: string) => void; messages: Message[]; isThinking: boolean;
   requestError: string | null; isOnline: boolean; hasConversation: boolean;
   conversations: ConversationHistory[]; activeConversationId: string | null; historyOpen: boolean;
   historyCollapsed: boolean; onToggleHistory: () => void; onToggleCollapsed: () => void; onNewConversation: () => void;
   onSelectConversation: (conversation: ConversationHistory) => void;
-  onSubmit: (event: FormEvent<HTMLFormElement>) => void; onSuggestion: (question: string) => void;
+  onSubmit: (event: FormEvent<HTMLFormElement>) => void; onSuggestion: (question: string) => void; onBackToOverview: () => void;
 }) {
   const scrollRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
@@ -969,6 +971,7 @@ function Intelligence({
 
   return (
     <div className="relative flex h-full min-h-0 overflow-hidden">
+      <button type="button" onClick={onBackToOverview} aria-label="Back to overview" title="Back to overview" className="fixed left-4 top-[76px] z-30 flex items-center gap-2 rounded-full border border-white/[0.10] bg-[#15120f]/90 px-4 py-2.5 text-[11px] font-medium text-white/65 shadow-[0_12px_40px_rgba(0,0,0,0.4)] backdrop-blur-xl transition hover:border-[#C97C3E]/35 hover:bg-[#1b1612] hover:text-white lg:left-[292px] lg:top-[112px]"><ArrowLeft size={14} /><span>Overview</span></button>
       <aside className={["fixed inset-y-[62px] left-0 z-40 w-[276px] border-r border-white/[0.07] bg-[#0d0b09] p-4 transition-all duration-200 lg:sticky lg:top-0 lg:z-10 lg:block lg:h-full lg:translate-x-0", historyCollapsed ? "lg:w-[76px] lg:px-3" : "lg:w-[276px]", historyOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"].join(" ")}>
         <div className={["flex items-center", historyCollapsed ? "justify-center" : "justify-between"].join(" ")}>
           {!historyCollapsed && <div className="text-[10px] font-medium uppercase tracking-[0.15em] text-white/35">Intelligence</div>}
