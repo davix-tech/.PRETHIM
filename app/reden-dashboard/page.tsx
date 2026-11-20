@@ -661,7 +661,7 @@ export default function RedenDashboardPage() {
           MAIN
       ===================================================== */}
 
-      <main className={["relative min-h-screen lg:pt-[96px]", activeRoute === "intelligence" ? "h-[calc(100dvh-138px)] min-h-0 overflow-hidden lg:h-[calc(100dvh-96px)]" : ""].join(" ")}>
+      <main className={["relative lg:pt-[96px]", activeRoute === "intelligence" ? "h-[calc(100dvh-138px)] min-h-0 overflow-hidden lg:h-[calc(100dvh-96px)]" : "min-h-screen"].join(" ")}>
         {activeRoute === "overview" && (
           <Overview
             onAsk={askQuestion}
