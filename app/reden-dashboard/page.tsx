@@ -1005,7 +1005,7 @@ function Intelligence({
                 <h1 className="text-[34px] font-medium leading-[1.08] tracking-[-0.055em] text-white/90 md:text-[48px]">What should we<br /><span className="text-white/35">look into today?</span></h1>
                 <p className="mt-4 max-w-xl text-[13px] leading-6 text-white/35">Ask a direct question about your store. REDEN separates observed facts from interpretation and identifies where the available evidence has limits.</p>
                 <div className="mt-7 grid gap-2 sm:grid-cols-2">{SUGGESTIONS.map((suggestion) => <button key={suggestion} type="button" onClick={() => onSuggestion(suggestion)} className="rounded-xl border border-white/[0.08] bg-white/[0.025] px-4 py-3 text-left text-[11px] text-white/50 transition hover:border-[#C97C3E]/30 hover:bg-[#C97C3E]/[0.05] hover:text-white/80">{suggestion}</button>)}</div>
-                <div className="mt-8"><Composer input={input} setInput={setInput} onSubmit={onSubmit} isThinking={isThinking} /><div className="mt-2 text-center text-[8px] text-white/20">Answers are grounded in the store evidence currently available.</div></div>
+                <div className="mt-8 pb-28"><div className="mt-2 text-center text-[8px] text-white/20">Answers are grounded in the store evidence currently available.</div></div>
                 {requestError && <div role="status" className="mt-5 rounded-xl border border-white/[0.07] bg-white/[0.025] px-4 py-3 text-[11px] leading-6 text-white/45">{requestError}</div>}
               </div>
             </div>
@@ -1018,9 +1018,9 @@ function Intelligence({
             </div>
           )}
         </div>
-        {hasConversation && <div className="shrink-0 border-t border-white/[0.06] bg-[#090807]/95 px-4 py-3 backdrop-blur-2xl lg:px-6">
+        <div className="shrink-0 border-t border-white/[0.06] bg-[#090807]/95 px-4 py-3 backdrop-blur-2xl lg:px-6">
           <div className="mx-auto max-w-[760px]"><Composer input={input} setInput={setInput} onSubmit={onSubmit} isThinking={isThinking} /><div className="mt-2 text-center text-[8px] text-white/20">Answers are grounded in the store evidence currently available.</div></div>
-        </div>}
+        </div>
       </section>
     </div>
   );
